@@ -1,7 +1,6 @@
-//SUPABASE_PROJECT_ID=lxjwgpkgfrehhvbtobmb
-//SUPABASE_PUBLISHABLE_KEY=sb_publishable_XFUE1J0cqZ6OAnHS21Zqxw_BoyaMrAA
-//SUPABASE_URL=https://lxjwgpkgfrehhvbtobmb.supabase.co
-//VITE_SUPABASE_PROJECT_ID=lxjwgpkgfrehhvbtobmb
+SUPABASE_PROJECT_ID=lxjwgpkgfrehhvbtobmb
+SUPABASE_PUBLISHABLE_KEY=sb_publishable_XFUE1J0cqZ6OAnHS21Zqxw_BoyaMrAA
+SUPABASE_URL=https://lxjwgpkgfrehhvbtobmb.supabase.co
+VITE_SUPABASE_PROJECT_ID=lxjwgpkgfrehhvbtobmb
 VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_XFUE1J0cqZ6OAnHS21Zqxw_BoyaMrAA
 VITE_SUPABASE_URL=https://lxjwgpkgfrehhvbtobmb.supabase.co
-import.meta.env.VITE_SUPABASE_URL

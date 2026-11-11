@@ -1,1 +1,0 @@
-import{a as e,n as t,t as n}from"./jsx-runtime-CXCudH8Z.js";var r=e(t(),1);n();var i=r.createContext(void 0),a=e=>{let t=r.useContext(i);if(e)return e;if(!t)throw Error(`No QueryClient set, use QueryClientProvider to set one`);return t};export{a as t};
