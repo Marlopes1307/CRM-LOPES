@@ -1,0 +1,413 @@
+import { i as __toESM } from "../_runtime.mjs";
+import { u as require_react } from "../_libs/@floating-ui/react-dom+[...].mjs";
+import { p as require_jsx_runtime } from "../_libs/@radix-ui/react-checkbox+[...].mjs";
+import { t as Button } from "./button-Bq5vK6RO.mjs";
+import { t as Input } from "./input-B8Q2ztVi.mjs";
+import { t as Textarea } from "./textarea-kko37XEX.mjs";
+import { t as supabase } from "./client-SAOWSTXM.mjs";
+import { S as Bath, d as Maximize, i as Trash2, l as Pencil, m as ImagePlus, s as Plus, t as X, v as Car, x as BedDouble } from "../_libs/lucide-react.mjs";
+import { n as useQuery } from "../_libs/tanstack__react-query.mjs";
+import { t as toast } from "../_libs/sonner.mjs";
+import { a as PROPERTY_KINDS, d as brl, g as useTable, i as Field, m as opts, o as PROPERTY_STATUS, p as emptyToNull, r as Empty, s as PageHeader, u as SelectField } from "./use-table-BMo7zDqC.mjs";
+import { a as DialogTitle, i as DialogHeader, n as Dialog, r as DialogContent, t as Badge } from "./dialog-CWtemGy5.mjs";
+//#region node_modules/.nitro/vite/services/ssr/assets/imoveis-CCB1CsNb.js
+var import_react = /* @__PURE__ */ __toESM(require_react());
+var import_jsx_runtime = require_jsx_runtime();
+var BUCKET = "property-photos";
+function usePhotoUrls(paths) {
+	return useQuery({
+		queryKey: ["photos", paths],
+		enabled: paths.length > 0,
+		staleTime: 18e5,
+		queryFn: async () => {
+			const { data } = await supabase.storage.from(BUCKET).createSignedUrls(paths, 3600);
+			return Object.fromEntries((data ?? []).map((d) => [d.path, d.signedUrl]));
+		}
+	});
+}
+var blank = {
+	title: "",
+	kind: "apartamento",
+	purpose: "venda",
+	status: "disponivel",
+	price: "",
+	address: "",
+	city: "",
+	bedrooms: "",
+	bathrooms: "",
+	parking: "",
+	area: "",
+	description: "",
+	owner_name: "",
+	owner_phone: ""
+};
+var NUM = [
+	"price",
+	"bedrooms",
+	"bathrooms",
+	"parking",
+	"area"
+];
+function PropertyForm({ initial, onDone }) {
+	const { save } = useTable("properties");
+	const [f, setF] = (0, import_react.useState)(initial ? Object.fromEntries(Object.keys(blank).map((k) => [k, initial[k] == null ? "" : String(initial[k])])) : blank);
+	const [photos, setPhotos] = (0, import_react.useState)(initial?.photos ?? []);
+	const [uploading, setUploading] = (0, import_react.useState)(false);
+	const { data: urls } = usePhotoUrls(photos);
+	const set = (k) => (v) => setF((p) => ({
+		...p,
+		[k]: v
+	}));
+	async function upload(files) {
+		if (!files?.length) return;
+		setUploading(true);
+		const { data: u } = await supabase.auth.getUser();
+		const added = [];
+		for (const file of Array.from(files)) {
+			const path = `${u.user.id}/${crypto.randomUUID()}-${file.name.replace(/[^\w.]/g, "_")}`;
+			const { error } = await supabase.storage.from(BUCKET).upload(path, file);
+			if (error) toast.error(error.message);
+			else added.push(path);
+		}
+		setPhotos((p) => [...p, ...added]);
+		setUploading(false);
+	}
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("form", {
+		className: "grid grid-cols-2 md:grid-cols-4 gap-3",
+		onSubmit: (e) => {
+			e.preventDefault();
+			const v = emptyToNull(Object.fromEntries(Object.entries(f).map(([k, x]) => [k, NUM.includes(k) && x ? Number(x) : x])));
+			save.mutate({
+				...initial ? { id: initial.id } : {},
+				...v,
+				title: f.title,
+				photos
+			}, { onSuccess: onDone });
+		},
+		children: [
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Field, {
+				label: "Título *",
+				className: "col-span-2 md:col-span-4",
+				children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
+					required: true,
+					value: f.title,
+					onChange: (e) => set("title")(e.target.value),
+					placeholder: "Apartamento 3 quartos com varanda"
+				})
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Field, {
+				label: "Tipo",
+				children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectField, {
+					value: f.kind,
+					onChange: set("kind"),
+					options: opts(PROPERTY_KINDS)
+				})
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Field, {
+				label: "Finalidade",
+				children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectField, {
+					value: f.purpose,
+					onChange: set("purpose"),
+					options: [{
+						id: "venda",
+						label: "Venda"
+					}, {
+						id: "aluguel",
+						label: "Aluguel"
+					}]
+				})
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Field, {
+				label: "Status",
+				children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectField, {
+					value: f.status,
+					onChange: set("status"),
+					options: PROPERTY_STATUS
+				})
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Field, {
+				label: "Preço (R$)",
+				children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
+					type: "number",
+					value: f.price,
+					onChange: (e) => set("price")(e.target.value)
+				})
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Field, {
+				label: "Endereço",
+				className: "col-span-2 md:col-span-3",
+				children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
+					value: f.address,
+					onChange: (e) => set("address")(e.target.value)
+				})
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Field, {
+				label: "Cidade",
+				children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
+					value: f.city,
+					onChange: (e) => set("city")(e.target.value)
+				})
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Field, {
+				label: "Quartos",
+				children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
+					type: "number",
+					value: f.bedrooms,
+					onChange: (e) => set("bedrooms")(e.target.value)
+				})
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Field, {
+				label: "Banheiros",
+				children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
+					type: "number",
+					value: f.bathrooms,
+					onChange: (e) => set("bathrooms")(e.target.value)
+				})
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Field, {
+				label: "Vagas",
+				children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
+					type: "number",
+					value: f.parking,
+					onChange: (e) => set("parking")(e.target.value)
+				})
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Field, {
+				label: "Área (m²)",
+				children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
+					type: "number",
+					value: f.area,
+					onChange: (e) => set("area")(e.target.value)
+				})
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Field, {
+				label: "Proprietário",
+				className: "col-span-2",
+				children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
+					value: f.owner_name,
+					onChange: (e) => set("owner_name")(e.target.value)
+				})
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Field, {
+				label: "Telefone do proprietário",
+				className: "col-span-2",
+				children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
+					value: f.owner_phone,
+					onChange: (e) => set("owner_phone")(e.target.value)
+				})
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Field, {
+				label: "Descrição",
+				className: "col-span-2 md:col-span-4",
+				children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Textarea, {
+					rows: 3,
+					value: f.description,
+					onChange: (e) => set("description")(e.target.value)
+				})
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "col-span-2 md:col-span-4",
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+					className: "text-xs text-muted-foreground mb-2",
+					children: "Fotos"
+				}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "flex flex-wrap gap-2",
+					children: [photos.map((p) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "relative h-20 w-28 overflow-hidden rounded-lg bg-muted",
+						children: [urls?.[p] && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("img", {
+							src: urls[p],
+							alt: "",
+							className: "h-full w-full object-cover"
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+							type: "button",
+							onClick: () => setPhotos((x) => x.filter((y) => y !== p)),
+							className: "absolute right-1 top-1 rounded-full bg-card p-0.5",
+							"aria-label": "Remover foto",
+							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(X, { className: "h-3 w-3" })
+						})]
+					}, p)), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
+						className: "flex h-20 w-28 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed text-xs text-muted-foreground hover:bg-muted",
+						children: [
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ImagePlus, { className: "h-5 w-5" }),
+							uploading ? "Enviando..." : "Adicionar",
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+								type: "file",
+								accept: "image/*",
+								multiple: true,
+								className: "hidden",
+								onChange: (e) => upload(e.target.files)
+							})
+						]
+					})]
+				})]
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
+				className: "col-span-2 md:col-span-4",
+				disabled: save.isPending || uploading,
+				children: "Salvar imóvel"
+			})
+		]
+	});
+}
+function PropertyCard({ p, onEdit, onDelete }) {
+	const { data: urls } = usePhotoUrls(p.photos.slice(0, 1));
+	const cover = p.photos[0] ? urls?.[p.photos[0]] : void 0;
+	const status = PROPERTY_STATUS.find((s) => s.id === p.status)?.label;
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		className: "overflow-hidden rounded-xl border bg-card shadow-card",
+		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+			className: "relative aspect-[4/3] bg-muted",
+			children: [
+				cover ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("img", {
+					src: cover,
+					alt: p.title,
+					className: "h-full w-full object-cover"
+				}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					className: "flex h-full items-center justify-center text-sm text-muted-foreground",
+					children: "Sem foto"
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Badge, {
+					className: "absolute left-3 top-3",
+					children: status
+				}),
+				p.photos.length > 1 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+					className: "absolute right-3 bottom-3 rounded bg-card px-2 py-0.5 text-xs",
+					children: [p.photos.length, " fotos"]
+				})
+			]
+		}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+			className: "p-4",
+			children: [
+				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+					className: "text-xs uppercase tracking-wide text-muted-foreground",
+					children: [
+						p.kind,
+						" · ",
+						p.purpose
+					]
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", {
+					className: "mt-1 text-lg leading-snug",
+					children: p.title
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+					className: "text-sm text-muted-foreground",
+					children: [p.address, p.city].filter(Boolean).join(", ")
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "mt-3 flex gap-4 text-xs text-muted-foreground",
+					children: [
+						p.bedrooms != null && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+							className: "flex items-center gap-1",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(BedDouble, { className: "h-3.5 w-3.5" }), p.bedrooms]
+						}),
+						p.bathrooms != null && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+							className: "flex items-center gap-1",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Bath, { className: "h-3.5 w-3.5" }), p.bathrooms]
+						}),
+						p.parking != null && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+							className: "flex items-center gap-1",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Car, { className: "h-3.5 w-3.5" }), p.parking]
+						}),
+						p.area != null && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+							className: "flex items-center gap-1",
+							children: [
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Maximize, { className: "h-3.5 w-3.5" }),
+								p.area,
+								" m²"
+							]
+						})
+					]
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "mt-3 flex items-center",
+					children: [
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+							className: "flex-1 font-semibold text-primary",
+							children: [brl(Number(p.price)), p.purpose === "aluguel" ? "/mês" : ""]
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
+							size: "icon",
+							variant: "ghost",
+							onClick: onEdit,
+							"aria-label": "Editar",
+							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Pencil, { className: "h-4 w-4" })
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
+							size: "icon",
+							variant: "ghost",
+							onClick: onDelete,
+							"aria-label": "Excluir",
+							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Trash2, { className: "h-4 w-4" })
+						})
+					]
+				})
+			]
+		})]
+	});
+}
+function PropertiesPage() {
+	const { rows, remove } = useTable("properties");
+	const [editing, setEditing] = (0, import_react.useState)(void 0);
+	const [status, setStatus] = (0, import_react.useState)("todos");
+	const [q, setQ] = (0, import_react.useState)("");
+	const list = (0, import_react.useMemo)(() => rows.filter((p) => (status === "todos" || p.status === status) && [
+		p.title,
+		p.address,
+		p.city
+	].join(" ").toLowerCase().includes(q.toLowerCase())), [
+		rows,
+		status,
+		q
+	]);
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [
+		/* @__PURE__ */ (0, import_jsx_runtime.jsx)(PageHeader, {
+			title: "Imóveis",
+			subtitle: `${rows.length} imóveis na carteira`,
+			action: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Button, {
+				onClick: () => setEditing(null),
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Plus, { className: "h-4 w-4" }), " Novo imóvel"]
+			})
+		}),
+		/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+			className: "mb-4 flex flex-wrap gap-3",
+			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Input, {
+				className: "flex-1 min-w-60 bg-card",
+				placeholder: "Buscar por título, endereço ou cidade",
+				value: q,
+				onChange: (e) => setQ(e.target.value)
+			}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+				className: "w-48",
+				children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SelectField, {
+					value: status,
+					onChange: setStatus,
+					options: [{
+						id: "todos",
+						label: "Todos os status"
+					}, ...PROPERTY_STATUS]
+				})
+			})]
+		}),
+		list.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Empty, { children: "Nenhum imóvel cadastrado." }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+			className: "grid gap-4 sm:grid-cols-2 xl:grid-cols-3",
+			children: list.map((p) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(PropertyCard, {
+				p,
+				onEdit: () => setEditing(p),
+				onDelete: () => confirm("Excluir imóvel?") && remove.mutate(p.id)
+			}, p.id))
+		}),
+		/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Dialog, {
+			open: editing !== void 0,
+			onOpenChange: (o) => !o && setEditing(void 0),
+			children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(DialogContent, {
+				className: "max-w-3xl max-h-[90vh] overflow-y-auto",
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(DialogHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(DialogTitle, { children: editing ? "Editar imóvel" : "Novo imóvel" }) }), editing !== void 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(PropertyForm, {
+					initial: editing,
+					onDone: () => setEditing(void 0)
+				})]
+			})
+		})
+	] });
+}
+//#endregion
+export { PropertiesPage as component };
