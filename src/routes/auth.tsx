@@ -12,8 +12,6 @@ export const Route = createFileRoute("/auth")({
     meta: [
       { title: "Entrar — Corretor CRM" },
       { name: "description", content: "Acesse seu CRM de corretor de imóveis." },
-      { property: "og:title", content: "Entrar — Corretor CRM" },
-      { property: "og:description", content: "Acesse seu CRM de corretor de imóveis." },
     ],
   }),
   component: AuthPage,
@@ -36,50 +34,39 @@ function AuthPage() {
     return () => data.subscription.unsubscribe();
   }, [navigate]);
 
-  async function submit(e: React.FormEvent) {
-  console.log("🟢 1. Função submit iniciada");
-  e.preventDefault();
-  console.log("🟢 2. preventDefault executado");
-  
-  setBusy(true);
-  console.log("🟢 3. busy = true, modo:", mode);
-  console.log("📧 Email:", email, "🔑 Senha:", password ? "preenchida" : "vazia");
+  async function handleSubmit() {
+    console.log("🟢 Botão clicado!");
+    setBusy(true);
 
-  try {
-    if (mode === "login") {
-      console.log("🟢 4. Tentando login...");
-      const { error, data } = await supabase.auth.signInWithPassword({ email, password });
-      console.log("🟢 5. Resposta recebida");
-      if (error) {
-        console.error("🔴 Erro no login:", error);
-        toast.error("E-mail ou senha inválidos");
+    try {
+      if (mode === "login") {
+        console.log("🟢 Fazendo login com:", email);
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) {
+          console.error("🔴 Erro login:", error);
+          toast.error("E-mail ou senha inválidos");
+        }
       } else {
-        console.log("✅ Login OK!", data);
+        console.log("🟢 Fazendo cadastro com:", email);
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: { emailRedirectTo: window.location.origin + "/painel" },
+        });
+        if (error) {
+          console.error("🔴 Erro cadastro:", error);
+          toast.error(error.message);
+        } else {
+          toast.success("Conta criada! Verifique seu e-mail.");
+        }
       }
-    } else {
-      console.log("🟢 4. Tentando cadastro...");
-      const { error, data } = await supabase.auth.signUp({
-        email,
-        password,
-        options: { emailRedirectTo: window.location.origin + "/painel" },
-      });
-      console.log("🟢 5. Resposta recebida");
-      if (error) {
-        console.error("🔴 Erro no cadastro:", error);
-        toast.error(error.message);
-      } else {
-        console.log("✅ Cadastro OK!", data);
-        toast.success("Conta criada! Confirme pelo link enviado ao seu e-mail.");
-      }
+    } catch (err) {
+      console.error("🔴 Erro:", err);
+      toast.error("Ocorreu um erro inesperado");
+    } finally {
+      setBusy(false);
     }
-  } catch (err) {
-    console.error("🔴 Erro inesperado:", err);
-    toast.error("Ocorreu um erro inesperado");
-  } finally {
-    console.log("🟢 6. Finalizando, setBusy(false)");
-    setBusy(false);
   }
-}
 
   async function google() {
     const r = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin + "/auth" });
@@ -93,34 +80,72 @@ function AuthPage() {
         <p className="font-display text-4xl leading-tight max-w-md">"Cada lead bem cuidado é uma chave entregue."</p>
       </div>
       <div className="flex items-center justify-center p-6">
-        <form onSubmit={submit} className="w-full max-w-sm space-y-4">
+        <div className="w-full max-w-sm space-y-4">
           <h1 className="text-3xl">{mode === "login" ? "Bem-vindo de volta" : "Criar conta"}</h1>
+          
           <Button type="button" variant="outline" className="w-full" onClick={google}>
             Continuar com Google
           </Button>
+          
           <div className="text-center text-xs text-muted-foreground">ou com e-mail</div>
+          
           <div className="space-y-2">
             <Label htmlFor="auth-email">E-mail</Label>
-            <Input id="auth-email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+            <Input
+              id="auth-email"
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
           </div>
+          
           <div className="space-y-2">
             <Label htmlFor="auth-password">Senha</Label>
-            <Input id="auth-password" type="password" autoComplete={mode === "login" ? "current-password" : "new-password"} required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
+            <Input
+              id="auth-password"
+              type="password"
+              autoComplete={mode === "login" ? "current-password" : "new-password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
           </div>
-          <Button className="w-full" disabled={busy}>{mode === "login" ? "Entrar" : "Cadastrar"}</Button>
+          
+          <button
+  type="button"
+  onClick={() => {
+    console.log("🟢 BOTÃO FUNCIONOU!!!");
+    alert("Clique detectado!");
+    handleSubmit();
+  }}
+  style={{
+    width: "100%",
+    padding: "10px 16px",
+    backgroundColor: "#2563eb",
+    color: "white",
+    borderRadius: "6px",
+    border: "none",
+    fontSize: "14px",
+    fontWeight: "500",
+    cursor: "pointer",
+    marginTop: "8px"
+  }}
+>
+  {mode === "login" ? "Entrar" : "Cadastrar"}
+</button>
+          
           <p className="text-center text-sm text-muted-foreground">
             {mode === "login" ? "Ainda não tem uma conta?" : "Já tem uma conta?"}
           </p>
+          
           <Button
-            type="button"
-            variant="outline"
-            className="w-full"
-            disabled={busy}
-            onClick={() => setMode(mode === "login" ? "signup" : "login")}
-          >
-            {mode === "login" ? "Cadastrar" : "Voltar para entrar"}
-          </Button>
-        </form>
+  type="button"
+  className="w-full"
+  onClick={handleSubmit}
+>
+  {mode === "login" ? "Entrar" : "Cadastrar"}
+</Button>
+        </div>
       </div>
     </div>
   );
