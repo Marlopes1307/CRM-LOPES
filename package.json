@@ -3,9 +3,9 @@
   "private": true,
   "sideEffects": false,
   "type": "module",
-  "scripts": {
+    "scripts": {
     "dev": "vite dev",
-    "build": "vite build",
+    "build": "node ./node_modules/vite/bin/vite.js build",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
@@ -13,7 +13,8 @@
     "test": "vitest run",
     "test:watch": "vitest"
   },
-  "overrides": {
+
+    "overrides": {
     "rolldown": "1.2.1"
   },
   "dependencies": {
