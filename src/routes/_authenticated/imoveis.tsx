@@ -1,23 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import {
-  Bath,
-  BedDouble,
-  Building2,
-  Camera,
-  Car,
-  ImagePlus,
-  MapPin,
-  Maximize,
-  Pencil,
-  Phone,
-  Plus,
-  Search,
-  Trash2,
-  User,
-  X,
-} from "lucide-react";
+import { Bath, BedDouble, Car, ImagePlus, Maximize, Pencil, Plus, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -37,13 +21,6 @@ export const Route = createFileRoute("/_authenticated/imoveis")({
 type Property = Row<"properties">;
 const BUCKET = "property-photos";
 
-const statusBadgeStyles: Record<string, string> = {
-  disponivel: "bg-emerald-600/95 text-white border-0 shadow-sm",
-  reservado: "bg-amber-500/95 text-slate-950 border-0 shadow-sm",
-  vendido: "bg-slate-800/95 text-white border-0 shadow-sm",
-  alugado: "bg-blue-600/95 text-white border-0 shadow-sm",
-};
-
 function usePhotoUrls(paths: string[]) {
   return useQuery({
     queryKey: ["photos", paths],
@@ -56,37 +33,13 @@ function usePhotoUrls(paths: string[]) {
   });
 }
 
-const blank = {
-  title: "",
-  kind: "apartamento",
-  purpose: "venda",
-  status: "disponivel",
-  price: "",
-  address: "",
-  city: "",
-  bedrooms: "",
-  bathrooms: "",
-  parking: "",
-  area: "",
-  description: "",
-  owner_name: "",
-  owner_phone: "",
-};
+const blank = { title: "", kind: "apartamento", purpose: "venda", status: "disponivel", price: "", address: "", city: "", bedrooms: "", bathrooms: "", parking: "", area: "", description: "", owner_name: "", owner_phone: "" };
 const NUM = ["price", "bedrooms", "bathrooms", "parking", "area"];
 
 function PropertyForm({ initial, onDone }: { initial: Property | null; onDone: () => void }) {
   const { save } = useTable("properties");
   const [f, setF] = useState<typeof blank>(
-    initial
-      ? (Object.fromEntries(
-          Object.keys(blank).map((k) => [
-            k,
-            (initial as Record<string, unknown>)[k] == null
-              ? ""
-              : String((initial as Record<string, unknown>)[k]),
-          ])
-        ) as typeof blank)
-      : blank
+    initial ? (Object.fromEntries(Object.keys(blank).map((k) => [k, (initial as Record<string, unknown>)[k] == null ? "" : String((initial as Record<string, unknown>)[k])])) as typeof blank) : blank,
   );
   const [photos, setPhotos] = useState<string[]>(initial?.photos ?? []);
   const [uploading, setUploading] = useState(false);
@@ -110,187 +63,102 @@ function PropertyForm({ initial, onDone }: { initial: Property | null; onDone: (
 
   return (
     <form
-      className="space-y-5 pt-2 max-h-[80vh] overflow-y-auto pr-1"
+      className="grid grid-cols-2 md:grid-cols-4 gap-3"
       onSubmit={(e) => {
         e.preventDefault();
-        const v = emptyToNull(
-          Object.fromEntries(
-            Object.entries(f).map(([k, x]) => [k, NUM.includes(k) && x ? Number(x) : x])
-          )
-        );
-        save.mutate(
-          { ...(initial ? { id: initial.id } : {}), ...v, title: f.title, photos } as never,
-          { onSuccess: onDone }
-        );
+        const v = emptyToNull(Object.fromEntries(Object.entries(f).map(([k, x]) => [k, NUM.includes(k) && x ? Number(x) : x])));
+        save.mutate({ ...(initial ? { id: initial.id } : {}), ...v, title: f.title, photos } as never, { onSuccess: onDone });
       }}
     >
-      {/* Bloco 1: Informações Básicas */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
-        <Field label="Título do anúncio *" className="col-span-2 md:col-span-4">
-          <Input
-            required
-            value={f.title}
-            onChange={(e) => set("title")(e.target.value)}
-            placeholder="Ex: Apartamento 3 quartos com varanda gourmet"
-          />
-        </Field>
-        <Field label="Tipo">
-          <SelectField value={f.kind} onChange={set("kind")} options={opts(PROPERTY_KINDS)} />
-        </Field>
-        <Field label="Finalidade">
-          <SelectField
-            value={f.purpose}
-            onChange={set("purpose")}
-            options={[
-              { id: "venda", label: "Venda" },
-              { id: "aluguel", label: "Aluguel" },
-            ]}
-          />
-        </Field>
-        <Field label="Status">
-          <SelectField value={f.status} onChange={set("status")} options={PROPERTY_STATUS} />
-        </Field>
-        <Field label="Valor (R$)">
-          <Input
-            type="number"
-            placeholder="650000"
-            value={f.price}
-            onChange={(e) => set("price")(e.target.value)}
-          />
-        </Field>
-        <Field label="Endereço / Bairro" className="col-span-2 md:col-span-3">
-          <Input
-            placeholder="Rua T-55, Setor Bueno"
-            value={f.address}
-            onChange={(e) => set("address")(e.target.value)}
-          />
-        </Field>
-        <Field label="Cidade">
-          <Input
-            placeholder="Goiânia"
-            value={f.city}
-            onChange={(e) => set("city")(e.target.value)}
-          />
-        </Field>
-      </div>
-
-      {/* Bloco 2: Características */}
-      <div className="rounded-xl bg-slate-50 border border-slate-200/80 p-3.5 grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Field label="Quartos">
-          <Input
-            type="number"
-            placeholder="3"
-            value={f.bedrooms}
-            onChange={(e) => set("bedrooms")(e.target.value)}
-          />
-        </Field>
-        <Field label="Banheiros">
-          <Input
-            type="number"
-            placeholder="2"
-            value={f.bathrooms}
-            onChange={(e) => set("bathrooms")(e.target.value)}
-          />
-        </Field>
-        <Field label="Vagas">
-          <Input
-            type="number"
-            placeholder="2"
-            value={f.parking}
-            onChange={(e) => set("parking")(e.target.value)}
-          />
-        </Field>
-        <Field label="Área útil (m²)">
-          <Input
-            type="number"
-            placeholder="98"
-            value={f.area}
-            onChange={(e) => set("area")(e.target.value)}
-          />
-        </Field>
-      </div>
-
-      {/* Bloco 3: Proprietário e Descrição */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-        <Field label="Nome do proprietário">
-          <Input
-            placeholder="Ex: Carlos Mendes"
-            value={f.owner_name}
-            onChange={(e) => set("owner_name")(e.target.value)}
-          />
-        </Field>
-        <Field label="Telefone do proprietário">
-          <Input
-            placeholder="(62) 99999-9999"
-            value={f.owner_phone}
-            onChange={(e) => set("owner_phone")(e.target.value)}
-          />
-        </Field>
-        <Field label="Descrição e diferenciais" className="md:col-span-2">
-          <Textarea
-            rows={3}
-            placeholder="Sol da manhã, armários planejados, lazer completo no condomínio..."
-            value={f.description}
-            onChange={(e) => set("description")(e.target.value)}
-          />
-        </Field>
-      </div>
-
-      {/* Bloco 4: Galeria de Fotos */}
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2.5">
-          Fotos do imóvel ({photos.length})
-        </p>
-        <div className="flex flex-wrap gap-2.5">
+      <Field label="Título *" className="col-span-2 md:col-span-4"><Input required value={f.title} onChange={(e) => set("title")(e.target.value)} placeholder="Apartamento 3 quartos com varanda" /></Field>
+      <Field label="Tipo"><SelectField value={f.kind} onChange={set("kind")} options={opts(PROPERTY_KINDS)} /></Field>
+      <Field label="Finalidade"><SelectField value={f.purpose} onChange={set("purpose")} options={[{ id: "venda", label: "Venda" }, { id: "aluguel", label: "Aluguel" }]} /></Field>
+      <Field label="Status"><SelectField value={f.status} onChange={set("status")} options={PROPERTY_STATUS} /></Field>
+      <Field label="Preço (R$)"><Input type="number" value={f.price} onChange={(e) => set("price")(e.target.value)} /></Field>
+      <Field label="Endereço" className="col-span-2 md:col-span-3"><Input value={f.address} onChange={(e) => set("address")(e.target.value)} /></Field>
+      <Field label="Cidade"><Input value={f.city} onChange={(e) => set("city")(e.target.value)} /></Field>
+      <Field label="Quartos"><Input type="number" value={f.bedrooms} onChange={(e) => set("bedrooms")(e.target.value)} /></Field>
+      <Field label="Banheiros"><Input type="number" value={f.bathrooms} onChange={(e) => set("bathrooms")(e.target.value)} /></Field>
+      <Field label="Vagas"><Input type="number" value={f.parking} onChange={(e) => set("parking")(e.target.value)} /></Field>
+      <Field label="Área (m²)"><Input type="number" value={f.area} onChange={(e) => set("area")(e.target.value)} /></Field>
+      <Field label="Proprietário" className="col-span-2"><Input value={f.owner_name} onChange={(e) => set("owner_name")(e.target.value)} /></Field>
+      <Field label="Telefone do proprietário" className="col-span-2"><Input value={f.owner_phone} onChange={(e) => set("owner_phone")(e.target.value)} /></Field>
+      <Field label="Descrição" className="col-span-2 md:col-span-4"><Textarea rows={3} value={f.description} onChange={(e) => set("description")(e.target.value)} /></Field>
+      <div className="col-span-2 md:col-span-4">
+        <p className="text-xs text-muted-foreground mb-2">Fotos</p>
+        <div className="flex flex-wrap gap-2">
           {photos.map((p) => (
-            <div
-              key={p}
-              className="group relative h-20 w-28 overflow-hidden rounded-xl border border-slate-200 bg-slate-100"
-            >
+            <div key={p} className="relative h-20 w-28 overflow-hidden rounded-lg bg-muted">
               {urls?.[p] && <img src={urls[p]} alt="" className="h-full w-full object-cover" />}
-              <button
-                type="button"
-                onClick={() => setPhotos((x) => x.filter((y) => y !== p))}
-                className="absolute right-1.5 top-1.5 rounded-full bg-slate-900/80 text-white p-1 opacity-90 hover:bg-red-600 transition-colors"
-                aria-label="Remover foto"
-              >
-                <X className="h-3 w-3" />
-              </button>
+              <button type="button" onClick={() => setPhotos((x) => x.filter((y) => y !== p))} className="absolute right-1 top-1 rounded-full bg-card p-0.5" aria-label="Remover foto"><X className="h-3 w-3" /></button>
             </div>
           ))}
-          <label className="flex h-20 w-28 cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50/70 text-xs font-medium text-slate-500 hover:border-primary hover:bg-blue-50/50 hover:text-primary transition-colors">
-            <ImagePlus className="h-5 w-5" />
-            <span>{uploading ? "Enviando..." : "Adicionar"}</span>
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              className="hidden"
-              onChange={(e) => upload(e.target.files)}
-            />
+          <label className="flex h-20 w-28 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed text-xs text-muted-foreground hover:bg-muted">
+            <ImagePlus className="h-5 w-5" />{uploading ? "Enviando..." : "Adicionar"}
+            <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => upload(e.target.files)} />
           </label>
         </div>
       </div>
-
-      <Button className="w-full h-11 font-semibold" disabled={save.isPending || uploading}>
-        {save.isPending ? "Salvando imóvel..." : "Salvar imóvel"}
-      </Button>
+      <Button className="col-span-2 md:col-span-4" disabled={save.isPending || uploading}>Salvar imóvel</Button>
     </form>
   );
 }
 
-function PropertyCard({
-  p,
-  onEdit,
-  onDelete,
-}: {
-  p: Property;
-  onEdit: () => void;
-  onDelete: () => void;
-}) {
+function PropertyCard({ p, onEdit, onDelete }: { p: Property; onEdit: () => void; onDelete: () => void }) {
   const { data: urls } = usePhotoUrls(p.photos.slice(0, 1));
   const cover = p.photos[0] ? urls?.[p.photos[0]] : undefined;
-  const statusLabel = PROPERTY_STATUS.find((s) => s.id === p.status)?.label;
-  const badgeStyle = statusBadgeStyles[p.status] ?? "bg-slate-800 text-white";
-
+  const status = PROPERTY_STATUS.find((s) => s.id === p.status)?.label;
   return (
+    <div className="overflow-hidden rounded-xl border bg-card shadow-card">
+      <div className="relative aspect-[4/3] bg-muted">
+        {cover ? <img src={cover} alt={p.title} className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center text-sm text-muted-foreground">Sem foto</div>}
+        <Badge className="absolute left-3 top-3">{status}</Badge>
+        {p.photos.length > 1 && <span className="absolute right-3 bottom-3 rounded bg-card px-2 py-0.5 text-xs">{p.photos.length} fotos</span>}
+      </div>
+      <div className="p-4">
+        <p className="text-xs uppercase tracking-wide text-muted-foreground">{p.kind} · {p.purpose}</p>
+        <h3 className="mt-1 text-lg leading-snug">{p.title}</h3>
+        <p className="text-sm text-muted-foreground">{[p.address, p.city].filter(Boolean).join(", ")}</p>
+        <div className="mt-3 flex gap-4 text-xs text-muted-foreground">
+          {p.bedrooms != null && <span className="flex items-center gap-1"><BedDouble className="h-3.5 w-3.5" />{p.bedrooms}</span>}
+          {p.bathrooms != null && <span className="flex items-center gap-1"><Bath className="h-3.5 w-3.5" />{p.bathrooms}</span>}
+          {p.parking != null && <span className="flex items-center gap-1"><Car className="h-3.5 w-3.5" />{p.parking}</span>}
+          {p.area != null && <span className="flex items-center gap-1"><Maximize className="h-3.5 w-3.5" />{p.area} m²</span>}
+        </div>
+        <div className="mt-3 flex items-center">
+          <span className="flex-1 font-semibold text-primary">{brl(Number(p.price))}{p.purpose === "aluguel" ? "/mês" : ""}</span>
+          <Button size="icon" variant="ghost" onClick={onEdit} aria-label="Editar"><Pencil className="h-4 w-4" /></Button>
+          <Button size="icon" variant="ghost" onClick={onDelete} aria-label="Excluir"><Trash2 className="h-4 w-4" /></Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PropertiesPage() {
+  const { rows, remove } = useTable("properties");
+  const [editing, setEditing] = useState<Property | null | undefined>(undefined);
+  const [status, setStatus] = useState("todos");
+  const [q, setQ] = useState("");
+  const list = useMemo(() => rows.filter((p) => (status === "todos" || p.status === status) && [p.title, p.address, p.city].join(" ").toLowerCase().includes(q.toLowerCase())), [rows, status, q]);
+  return (
+    <>
+      <PageHeader title="Imóveis" subtitle={`${rows.length} imóveis na carteira`} action={<Button onClick={() => setEditing(null)}><Plus className="h-4 w-4" /> Novo imóvel</Button>} />
+      <div className="mb-4 flex flex-wrap gap-3">
+        <Input className="flex-1 min-w-60 bg-card" placeholder="Buscar por título, endereço ou cidade" value={q} onChange={(e) => setQ(e.target.value)} />
+        <div className="w-48"><SelectField value={status} onChange={setStatus} options={[{ id: "todos", label: "Todos os status" }, ...PROPERTY_STATUS]} /></div>
+      </div>
+      {list.length === 0 ? <Empty>Nenhum imóvel cadastrado.</Empty> : (
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {list.map((p) => <PropertyCard key={p.id} p={p} onEdit={() => setEditing(p)} onDelete={() => confirm("Excluir imóvel?") && remove.mutate(p.id)} />)}
+        </div>
+      )}
+      <Dialog open={editing !== undefined} onOpenChange={(o) => !o && setEditing(undefined)}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>{editing ? "Editar imóvel" : "Novo imóvel"}</DialogTitle></DialogHeader>
+          {editing !== undefined && <PropertyForm initial={editing} onDone={() => setEditing(undefined)} />}
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}

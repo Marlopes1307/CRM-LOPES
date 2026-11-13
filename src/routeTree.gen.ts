@@ -10,14 +10,14 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AutenthicatedRouteRouteImport } from './routes/_autenthicated/route'
+import { Route as AutenthicatedRouteRouteImport } from './routes/_authenticated/route.tsx'
 import { Route as AuthRouteImport } from './routes/auth'
-import { Route as AutenthicatedAgendaRouteImport } from './routes/_autenthicated/agenda'
-import { Route as AutenthicatedClientesRouteImport } from './routes/_autenthicated/clientes'
-import { Route as AutenthicatedFinanceiroRouteImport } from './routes/_autenthicated/financeiro'
-import { Route as AutenthicatedFunilRouteImport } from './routes/_autenthicated/funil'
-import { Route as AutenthicatedImoveisRouteImport } from './routes/_autenthicated/imoveis'
-import { Route as AutenthicatedPainelRouteImport } from './routes/_autenthicated/painel'
+import { Route as AutenthicatedAgendaRouteImport } from './routes/_authenticated/agenda.tsx'
+import { Route as AutenthicatedClientesRouteImport } from './routes/_authenticated/clientes.tsx'
+import { Route as AutenthicatedFinanceiroRouteImport } from './routes/_authenticated/financeiro.tsx'
+import { Route as AutenthicatedFunilRouteImport } from './routes/_authenticated/funil.tsx'
+import { Route as AutenthicatedImoveisRouteImport } from './routes/_authenticated/imoveis.tsx'
+import { Route as AutenthicatedPainelRouteImport } from './routes/_authenticated/painel.tsx'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',

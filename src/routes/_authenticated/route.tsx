@@ -5,25 +5,10 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
-  beforeLoad: async ({ location }) => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    if (location.pathname === "/auth") {
-      return;
-    }
-
-    try {
-      const { data, error } = await supabase.auth.getUser();
-      if (error || !data.user) {
-        throw redirect({ to: "/auth" });
-      }
-      return { user: data.user };
-    } catch (err) {
-      if ((err as { isRedirect?: boolean })?.isRedirect) throw err;
-      throw redirect({ to: "/auth" });
-    }
+  beforeLoad: async () => {
+    const { data } = await supabase.auth.getUser();
+    if (!data.user) throw redirect({ to: "/auth" });
+    return { user: data.user };
   },
   component: Layout,
 });
@@ -41,20 +26,16 @@ function Layout() {
   const { user } = Route.useRouteContext();
   const qc = useQueryClient();
   const navigate = useNavigate();
-
   async function signOut() {
     await qc.cancelQueries();
     qc.clear();
     await supabase.auth.signOut();
     navigate({ to: "/auth", replace: true });
   }
-
   return (
     <div className="min-h-screen md:flex">
       <aside className="bg-sidebar text-sidebar-foreground md:w-60 md:min-h-screen md:sticky md:top-0 flex md:flex-col">
-        <div className="hidden md:block px-6 py-6 font-display text-xl text-sidebar-accent-foreground">
-          Corretor CRM
-        </div>
+        <div className="hidden md:block px-6 py-6 font-display text-xl text-sidebar-accent-foreground">Corretor CRM</div>
         <nav className="flex md:flex-col gap-1 px-2 md:px-3 py-2 overflow-x-auto flex-1">
           {nav.map((n) => (
             <Link
@@ -69,13 +50,8 @@ function Layout() {
           ))}
         </nav>
         <div className="p-3 md:border-t border-sidebar-border">
-          <div className="hidden md:block truncate text-xs opacity-70 px-3 mb-2">
-            {user?.email}
-          </div>
-          <button
-            onClick={signOut}
-            className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm hover:bg-sidebar-accent w-full"
-          >
+          <div className="hidden md:block truncate text-xs opacity-70 px-3 mb-2">{user.email}</div>
+          <button onClick={signOut} className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm hover:bg-sidebar-accent w-full">
             <LogOut className="h-4 w-4" /> <span className="hidden md:inline">Sair</span>
           </button>
         </div>

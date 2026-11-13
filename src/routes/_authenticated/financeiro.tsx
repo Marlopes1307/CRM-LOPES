@@ -3,16 +3,7 @@ import { useMemo, useState } from "react";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import {
-  Award,
-  Building2,
-  CheckCircle2,
-  Clock,
-  Plus,
-  Trash2,
-  TrendingUp,
-  Wallet,
-} from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -27,30 +18,11 @@ export const Route = createFileRoute("/_authenticated/financeiro")({
   component: Finance,
 });
 
-function Stat({
-  label,
-  value,
-  icon: Icon,
-  iconBg,
-  valueColor,
-}: {
-  label: string;
-  value: string;
-  icon: React.ElementType;
-  iconBg: string;
-  valueColor?: string;
-}) {
+function Stat({ label, value, tone }: { label: string; value: string; tone?: string }) {
   return (
-    <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-card">
-      <div className="flex items-center justify-between">
-        <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">{label}</p>
-        <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${iconBg}`}>
-          <Icon className="h-4 w-4" />
-        </div>
-      </div>
-      <p className={`mt-4 font-display text-2xl sm:text-3xl tracking-tight tabular-nums ${valueColor ?? "text-slate-900"}`}>
-        {value}
-      </p>
+    <div className="rounded-xl border bg-card p-5 shadow-card">
+      <p className="text-xs uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className={"mt-2 font-display text-3xl " + (tone ?? "")}>{value}</p>
     </div>
   );
 }
@@ -61,28 +33,15 @@ function Finance() {
   const properties = useTable("properties").rows;
   const [open, setOpen] = useState(false);
   const year = new Date().getFullYear();
-  const [f, setF] = useState({
-    description: "",
-    value: "",
-    commission_pct: "6",
-    closed_at: format(new Date(), "yyyy-MM-dd"),
-    client_id: "",
-    property_id: "",
-  });
+  const [f, setF] = useState({ description: "", value: "", commission_pct: "6", closed_at: format(new Date(), "yyyy-MM-dd"), client_id: "", property_id: "" });
   const set = (k: string) => (v: string) => setF((p) => ({ ...p, [k]: v }));
 
   const stats = useMemo(() => {
-    let received = 0,
-      pending = 0,
-      volume = 0;
-    const months = Array.from({ length: 12 }, (_, i) => ({
-      mes: format(new Date(year, i, 1), "MMM", { locale: ptBR }),
-      comissao: 0,
-    }));
+    let received = 0, pending = 0, volume = 0;
+    const months = Array.from({ length: 12 }, (_, i) => ({ mes: format(new Date(year, i, 1), "MMM", { locale: ptBR }), comissao: 0 }));
     for (const d of rows) {
       const c = commission(Number(d.value), Number(d.commission_pct));
-      if (d.paid) received += c;
-      else pending += c;
+      if (d.paid) received += c; else pending += c;
       volume += Number(d.value);
       const dt = parseISO(d.closed_at);
       if (dt.getFullYear() === year) months[dt.getMonth()]!.comissao += c;
@@ -93,162 +52,78 @@ function Finance() {
   const preview = commission(Number(f.value || 0), Number(f.commission_pct || 0));
 
   return (
-    <div className="max-w-6xl mx-auto pb-12 space-y-6">
-      <PageHeader
-        title="Financeiro"
-        subtitle="Acompanhe seu VGV negociado, vendas fechadas e comissões"
-        action={
-          <Button onClick={() => setOpen(true)} className="gap-2 shadow-sm">
-            <Plus className="h-4 w-4" />
-            Registrar negócio
-          </Button>
-        }
-      />
-
-      {/* Cards de Resumo Financeiro */}
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Stat
-          label="Comissões recebidas"
-          value={brl(stats.received)}
-          icon={CheckCircle2}
-          iconBg="bg-emerald-50 text-emerald-600"
-          valueColor="text-emerald-600"
-        />
-        <Stat
-          label="A receber"
-          value={brl(stats.pending)}
-          icon={Clock}
-          iconBg="bg-amber-50 text-amber-600"
-          valueColor="text-amber-600"
-        />
-        <Stat
-          label="VGV negociado"
-          value={brl(stats.volume)}
-          icon={TrendingUp}
-          iconBg="bg-blue-50 text-blue-600"
-        />
-        <Stat
-          label="Negócios fechados"
-          value={String(rows.length)}
-          icon={Award}
-          iconBg="bg-indigo-50 text-indigo-600"
-        />
+    <>
+      <PageHeader title="Financeiro" subtitle="Negócios fechados e comissões" action={<Button onClick={() => setOpen(true)}><Plus className="h-4 w-4" /> Registrar negócio</Button>} />
+      <div className="grid gap-4 md:grid-cols-4 mb-6">
+        <Stat label="Comissões recebidas" value={brl(stats.received)} tone="text-success" />
+        <Stat label="A receber" value={brl(stats.pending)} tone="text-warning" />
+        <Stat label="VGV negociado" value={brl(stats.volume)} />
+        <Stat label="Negócios fechados" value={String(rows.length)} />
       </div>
-
-      {/* Gráfico Mensal */}
-      <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-card">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h3 className="font-display text-lg text-slate-900">Comissões por mês — {year}</h3>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Evolução mensal das comissões geradas no ano
-            </p>
-          </div>
-        </div>
-        <div className="h-64 w-full">
-          <ResponsiveContainer width="100%" height="100%">
+      <div className="rounded-xl border bg-card p-5 shadow-card mb-6">
+        <h3 className="mb-4 text-lg">Comissões por mês — {year}</h3>
+        <div className="h-64">
+          <ResponsiveContainer>
             <BarChart data={stats.months}>
-              <CartesianGrid vertical={false} stroke="#e2e8f0" strokeDasharray="3 3" />
-              <XAxis
-                dataKey="mes"
-                tickLine={false}
-                axisLine={false}
-                fontSize={12}
-                tick={{ fill: "#64748b" }}
-              />
-              <YAxis
-                tickLine={false}
-                axisLine={false}
-                fontSize={12}
-                tick={{ fill: "#64748b" }}
-                tickFormatter={(v) => `R$ ${Math.round(v / 1000)}k`}
-              />
-              <Tooltip
-                cursor={{ fill: "#f1f5f9" }}
-                contentStyle={{
-                  borderRadius: "12px",
-                  border: "1px solid #e2e8f0",
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
-                }}
-                formatter={(v: number) => [brl(v), "Comissão"]}
-              />
-              <Bar dataKey="comissao" fill="#2563eb" radius={[6, 6, 0, 0]} maxBarSize={44} />
+              <CartesianGrid vertical={false} stroke="var(--border)" />
+              <XAxis dataKey="mes" tickLine={false} axisLine={false} fontSize={12} />
+              <YAxis tickLine={false} axisLine={false} fontSize={12} tickFormatter={(v) => `${Math.round(v / 1000)}k`} />
+              <Tooltip formatter={(v: number) => brl(v)} />
+              <Bar dataKey="comissao" fill="var(--chart-1)" radius={[6, 6, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
       </div>
-
-      {/* Tabela de Negócios Fechados */}
-      {rows.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-300 bg-white/60 py-14">
-          <Empty>Nenhum negócio fechado registrado ainda.</Empty>
-        </div>
-      ) : (
-        <div className="rounded-2xl border border-slate-200/90 bg-white shadow-card overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-            <h3 className="font-display text-base font-semibold text-slate-900">
-              Histórico de vendas e comissões
-            </h3>
-            <span className="text-xs text-slate-500">
-              Clique no status para marcar como recebida
-            </span>
-          </div>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader className="bg-slate-50/80">
-                <TableRow>
-                  <TableHead className="font-semibold text-slate-600">Data</TableHead>
-                  <TableHead className="font-semibold text-slate-600">Negócio / Cliente</TableHead>
-                  <TableHead className="font-semibold text-slate-600">Valor do Imóvel</TableHead>
-                  <TableHead className="font-semibold text-slate-600">Sua Comissão</TableHead>
-                  <TableHead className="font-semibold text-slate-600">Status</TableHead>
-                  <TableHead className="w-12" />
+      {rows.length === 0 ? <Empty>Nenhum negócio registrado.</Empty> : (
+        <div className="rounded-xl border bg-card shadow-card overflow-x-auto">
+          <Table>
+            <TableHeader><TableRow><TableHead>Data</TableHead><TableHead>Negócio</TableHead><TableHead>Valor</TableHead><TableHead>Comissão</TableHead><TableHead>Status</TableHead><TableHead /></TableRow></TableHeader>
+            <TableBody>
+              {rows.map((d) => (
+                <TableRow key={d.id}>
+                  <TableCell>{format(parseISO(d.closed_at), "dd/MM/yyyy")}</TableCell>
+                  <TableCell>
+                    <p className="font-medium">{d.description || properties.find((p) => p.id === d.property_id)?.title || "—"}</p>
+                    <p className="text-xs text-muted-foreground">{clients.find((c) => c.id === d.client_id)?.name}</p>
+                  </TableCell>
+                  <TableCell>{brl(Number(d.value))}</TableCell>
+                  <TableCell className="font-semibold">{brl(commission(Number(d.value), Number(d.commission_pct)))} <span className="text-xs text-muted-foreground">({Number(d.commission_pct)}%)</span></TableCell>
+                  <TableCell>
+                    <button onClick={() => patch.mutate({ id: d.id, paid: !d.paid })}>
+                      <Badge variant={d.paid ? "default" : "outline"}>{d.paid ? "Recebida" : "A receber"}</Badge>
+                    </button>
+                  </TableCell>
+                  <TableCell><Button size="icon" variant="ghost" onClick={() => confirm("Excluir negócio?") && remove.mutate(d.id)} aria-label="Excluir"><Trash2 className="h-4 w-4" /></Button></TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {rows.map((d) => {
-                  const dealTitle =
-                    d.description ||
-                    properties.find((p) => p.id === d.property_id)?.title ||
-                    "Venda sem descrição";
-                  const clientName = clients.find((c) => c.id === d.client_id)?.name;
-
-                  return (
-                    <TableRow key={d.id} className="hover:bg-slate-50/70">
-                      <TableCell className="tabular-nums text-slate-600 font-medium">
-                        {format(parseISO(d.closed_at), "dd/MM/yyyy")}
-                      </TableCell>
-                      <TableCell>
-                        <p className="font-semibold text-slate-900">{dealTitle}</p>
-                        {clientName && (
-                          <p className="text-xs text-slate-500 mt-0.5">{clientName}</p>
-                        )}
-                      </TableCell>
-                      <TableCell className="tabular-nums text-slate-700">
-                        {brl(Number(d.value))}
-                      </TableCell>
-                      <TableCell className="tabular-nums">
-                        <span className="font-semibold text-slate-900">
-                          {brl(commission(Number(d.value), Number(d.commission_pct)))}
-                        </span>{" "}
-                        <span className="text-xs text-slate-400">
-                          ({Number(d.commission_pct)}%)
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <button
-                          type="button"
-                          onClick={() => patch.mutate({ id: d.id, paid: !d.paid })}
-                          title="Clique para alternar o status de pagamento"
-                          className="transition-transform active:scale-95"
-                        >
-                          {d.paid ? (
-                            <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 gap-1 font-medium">
-                              <CheckCircle2 className="h-3 w-3" />
-                              Recebida
-                            </Badge>
-                          ) : (
-                            <Badge
-                              variant="outline"
-                              className="bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 gap-1 font-medium"
-                            >
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Registrar negócio fechado</DialogTitle></DialogHeader>
+          <form
+            className="grid grid-cols-2 gap-3"
+            onSubmit={(e) => {
+              e.preventDefault();
+              save.mutate(
+                { description: f.description || null, value: Number(f.value), commission_pct: Number(f.commission_pct), closed_at: f.closed_at, client_id: f.client_id || null, property_id: f.property_id || null },
+                { onSuccess: () => setOpen(false) },
+              );
+            }}
+          >
+            <Field label="Descrição" className="col-span-2"><Input value={f.description} onChange={(e) => set("description")(e.target.value)} placeholder="Venda apto Moema" /></Field>
+            <Field label="Valor do negócio (R$) *"><Input type="number" required value={f.value} onChange={(e) => set("value")(e.target.value)} /></Field>
+            <Field label="Comissão (%)"><Input type="number" step="0.1" value={f.commission_pct} onChange={(e) => set("commission_pct")(e.target.value)} /></Field>
+            <Field label="Cliente"><SelectField value={f.client_id} onChange={set("client_id")} options={clients.map((c) => ({ id: c.id, label: c.name }))} /></Field>
+            <Field label="Imóvel"><SelectField value={f.property_id} onChange={set("property_id")} options={properties.map((p) => ({ id: p.id, label: p.title }))} /></Field>
+            <Field label="Data de fechamento" className="col-span-2"><Input type="date" value={f.closed_at} onChange={(e) => set("closed_at")(e.target.value)} /></Field>
+            <p className="col-span-2 rounded-lg bg-primary-soft p-3 text-sm">Sua comissão: <strong>{brl(preview)}</strong></p>
+            <Button className="col-span-2" disabled={save.isPending}>Salvar</Button>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
