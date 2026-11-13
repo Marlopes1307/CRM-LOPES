@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
-export const Route = createFileRoute("/_authenticated")({
+export const Route = createFileRoute("/_authenticated" as never)({
   ssr: false,
   beforeLoad: async ({ location }) => {
     if (typeof window === "undefined") return;
