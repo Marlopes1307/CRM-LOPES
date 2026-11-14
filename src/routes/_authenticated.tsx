@@ -7,10 +7,13 @@ import {
   KanbanSquare,
   LayoutDashboard,
   LogOut,
+  ShieldCheck,
+  UserCog,
   Users,
   Wallet,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useManagerAccess } from "@/lib/use-table";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -32,7 +35,7 @@ export const Route = createFileRoute("/_authenticated")({
   component: Layout,
 });
 
-const nav = [
+const baseNav = [
   { to: "/painel", label: "Painel Geral", icon: LayoutDashboard },
   { to: "/clientes", label: "Clientes", icon: Users },
   { to: "/funil", label: "Funil de Vendas", icon: KanbanSquare },
@@ -43,6 +46,7 @@ const nav = [
 
 function Layout() {
   const { user } = Route.useRouteContext();
+  const { isManager, me } = useManagerAccess();
   const qc = useQueryClient();
   const navigate = useNavigate();
 
@@ -64,10 +68,10 @@ function Layout() {
               <Building2 className="h-5 w-5" />
             </div>
             <div>
-              <span className="font-display text-base font-bold tracking-tight text-white block leading-none">
+              <span className="font-display text-sm font-bold tracking-tight text-white block leading-tight">
                 Mota Negócios
               </span>
-              <span className="text-[11px] text-slate-400 font-medium mt-1 block">
+              <span className="text-[11px] text-amber-400 font-semibold tracking-wide uppercase block mt-0.5">
                 Imobiliários
               </span>
             </div>
@@ -87,7 +91,7 @@ function Layout() {
           <p className="hidden md:block px-3 mb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
             Menu Principal
           </p>
-          {nav.map((n) => (
+          {baseNav.map((n) => (
             <Link
               key={n.to}
               to={n.to}
@@ -104,16 +108,44 @@ function Layout() {
               <ChevronRight className="hidden md:block h-3.5 w-3.5 opacity-0 group-hover:opacity-60 transition-opacity" />
             </Link>
           ))}
+
+          {/* Aba Exclusiva do Gerente */}
+          {isManager && (
+            <>
+              <p className="hidden md:block px-3 mt-5 mb-2 text-[11px] font-semibold uppercase tracking-wider text-amber-500/80">
+                Gerência
+              </p>
+              <Link
+                to={"/equipe" as never}
+                className="group flex items-center justify-between rounded-xl px-3.5 py-2.5 text-sm font-medium text-amber-200/90 whitespace-nowrap transition-all duration-150 hover:bg-slate-800/80 hover:text-white"
+                activeProps={{
+                  className:
+                    "bg-amber-500 text-slate-950 font-semibold shadow-md hover:bg-amber-500 hover:text-slate-950",
+                }}
+              >
+                <span className="flex items-center gap-3">
+                  <UserCog className="h-4 w-4 shrink-0" />
+                  Equipe
+                </span>
+                <ChevronRight className="hidden md:block h-3.5 w-3.5 opacity-0 group-hover:opacity-60 transition-opacity" />
+              </Link>
+            </>
+          )}
         </nav>
 
-        {/* Rodapé com Perfil do Corretor */}
+        {/* Rodapé com Perfil do Corretor / Gerente */}
         <div className="hidden md:block p-4 border-t border-slate-800/80 bg-slate-950/40">
           <div className="flex items-center gap-3 mb-3 px-1">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-800 border border-slate-700 text-xs font-bold text-amber-400 uppercase">
               {user?.email?.slice(0, 2) ?? "CR"}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-medium text-slate-200 truncate">Corretor</p>
+              <div className="flex items-center gap-1.5">
+                <p className="text-xs font-medium text-slate-200 truncate">
+                  {me?.full_name || (isManager ? "Gerente" : "Corretor")}
+                </p>
+                {isManager && <ShieldCheck className="h-3.5 w-3.5 text-amber-400 shrink-0" />}
+              </div>
               <p className="text-[11px] text-slate-400 truncate">{user?.email}</p>
             </div>
           </div>
