@@ -235,3 +235,143 @@ function Agenda() {
                           <Button
                             asChild
                             size="sm"
+                                                      <Button
+                            asChild
+                            size="sm"
+                            variant="outline"
+                            title="Salvar no Google Agenda para receber alarme no celular"
+                            className="h-8 gap-1.5 text-xs font-medium text-blue-700 border-blue-200 bg-blue-50/50 hover:bg-blue-100 hover:text-blue-800"
+                          >
+                            <a href={googleUrl} target="_blank" rel="noreferrer">
+                              <BellRing className="h-3.5 w-3.5" />
+                              <span className="hidden md:inline">Alertar no celular</span>
+                            </a>
+                          </Button>
+
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => confirm("Excluir compromisso?") && remove.mutate(a.id)}
+                            aria-label="Excluir"
+                            className="h-8 w-8 text-slate-400 hover:text-red-600 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            );
+          })}
+        </div>
+      )}
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="font-display text-xl">Novo compromisso</DialogTitle>
+          </DialogHeader>
+          <form
+            className="grid grid-cols-2 gap-4 pt-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const startsAtIso = new Date(`${f.date}T${f.time}`).toISOString();
+              const clientName = clients.find((c) => c.id === f.client_id)?.name;
+              const propertyTitle = properties.find((p) => p.id === f.property_id)?.title;
+
+              save.mutate(
+                {
+                  title: f.title,
+                  kind: f.kind,
+                  starts_at: startsAtIso,
+                  client_id: f.client_id || null,
+                  property_id: f.property_id || null,
+                  notes: f.notes || null,
+                },
+                {
+                  onSuccess: () => {
+                    if (syncGoogle) {
+                      const url = buildGoogleCalendarUrl({
+                        title: f.title,
+                        startsAtIso,
+                        clientName,
+                        propertyTitle,
+                        notes: f.notes || null,
+                      });
+                      window.open(url, "_blank", "noopener,noreferrer");
+                    }
+                    setOpen(false);
+                    setF((p) => ({ ...p, title: "", notes: "" }));
+                  },
+                }
+              );
+            }}
+          >
+            <Field label="Título *" className="col-span-2">
+              <Input
+                required
+                placeholder="Ex: Visita ao apartamento decorado"
+                value={f.title}
+                onChange={(e) => set("title")(e.target.value)}
+              />
+            </Field>
+            <Field label="Tipo" className="col-span-2">
+              <SelectField value={f.kind} onChange={set("kind")} options={APPOINTMENT_KINDS} />
+            </Field>
+            <Field label="Data">
+              <Input type="date" required value={f.date} onChange={(e) => set("date")(e.target.value)} />
+            </Field>
+            <Field label="Hora">
+              <Input type="time" required value={f.time} onChange={(e) => set("time")(e.target.value)} />
+            </Field>
+            <Field label="Cliente">
+              <SelectField
+                value={f.client_id}
+                onChange={set("client_id")}
+                options={clients.map((c) => ({ id: c.id, label: c.name }))}
+              />
+            </Field>
+            <Field label="Imóvel">
+              <SelectField
+                value={f.property_id}
+                onChange={set("property_id")}
+                options={properties.map((p) => ({ id: p.id, label: p.title }))}
+              />
+            </Field>
+            <Field label="Observações" className="col-span-2">
+              <Textarea
+                rows={3}
+                placeholder="Detalhes adicionais, endereço de encontro ou código do portão..."
+                value={f.notes}
+                onChange={(e) => set("notes")(e.target.value)}
+              />
+            </Field>
+
+            <label className="col-span-2 flex items-center gap-2.5 rounded-xl bg-blue-50/70 border border-blue-100 p-3 text-xs text-blue-900 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={syncGoogle}
+                onChange={(e) => setSyncGoogle(e.target.checked)}
+                className="h-4 w-4 rounded border-blue-300 text-blue-600"
+              />
+              <CalendarClock className="h-4 w-4 text-blue-600 shrink-0" />
+              <span>Abrir no Google Agenda ao salvar para ativar alarme no celular</span>
+            </label>
+
+            <div className="col-span-2 flex justify-end gap-2 pt-1">
+              <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={save.isPending}>
+                {save.isPending ? "Salvando..." : "Agendar compromisso"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
