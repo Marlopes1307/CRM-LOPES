@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "Entrar — Corretor CRM" },
+      { title: "Entrar — Mota Negócios Imobiliáios" },
       { name: "description", content: "Acesse seu CRM de corretor de imóveis." },
       { property: "og:title", content: "Entrar — Corretor CRM" },
       { property: "og:description", content: "Acesse seu CRM de corretor de imóveis." },
@@ -62,12 +62,12 @@ function AuthPage() {
   return (
     <div className="min-h-screen grid md:grid-cols-2">
       <div className="hidden md:flex bg-hero text-primary-foreground p-12 flex-col justify-between">
-        <Link to="/" className="font-display text-xl">Corretor CRM</Link>
+        <Link to="/" className="font-display text-xl">Mota Negócios Imobiliários</Link>
         <p className="font-display text-4xl leading-tight max-w-md">"Cada lead bem cuidado é uma chave entregue."</p>
       </div>
       <div className="flex items-center justify-center p-6">
         <form onSubmit={submit} className="w-full max-w-sm space-y-4">
-          <h1 className="text-3xl">{mode === "login" ? "Bem-vindo de volta" : "Criar conta"}</h1>
+          <h1 className="text-3xl">{mode === "login" ? "Bem-vindo" : "Criar conta"}</h1>
           <Button type="button" variant="outline" className="w-full" onClick={google}>
             Continuar com Google
           </Button>
