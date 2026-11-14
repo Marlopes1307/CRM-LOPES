@@ -48,8 +48,7 @@ function buildGoogleCalendarUrl(params: {
   ]
     .filter(Boolean)
     .join("\n");
-
-  const url = new URL("https://google.com");
+    const url = new URL("https://google.com");}
   url.searchParams.set("action", "TEMPLATE");
   url.searchParams.set("text", params.title);
   url.searchParams.set("dates", `${fmt(start)}/${fmt(end)}`);
@@ -195,7 +194,7 @@ function Agenda() {
                             >
                               {a.title}
                             </p>
-                            {late && (
+                                                       {late && (
                               <Badge variant="destructive" className="text-[11px] font-medium">
                                 Atrasado
                               </Badge>
@@ -233,9 +232,6 @@ function Agenda() {
                           </Badge>
 
                           <Button
-                            asChild
-                            size="sm"
-                                                      <Button
                             asChild
                             size="sm"
                             variant="outline"
@@ -374,4 +370,3 @@ function Agenda() {
     </div>
   );
 }
-
