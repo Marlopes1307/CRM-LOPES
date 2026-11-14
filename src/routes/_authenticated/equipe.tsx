@@ -8,7 +8,7 @@ import { PageHeader } from "@/components/crm/ui";
 import { brl, commission } from "@/lib/crm";
 import { useManagerAccess, useTable } from "@/lib/use-table";
 
-export const Route = createFileRoute("/_authenticated/equipe" as never)({
+export const Route = createFileRoute("/_authenticated/equipe")({
   head: () => ({ meta: [{ title: "Equipe — Mota Negócios Imobiliários" }] }),
   component: TeamPage,
 });
