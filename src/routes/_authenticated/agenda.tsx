@@ -233,6 +233,9 @@ function Agenda() {
                                 {prop.title}
                               </span>
                             )}
+                            <Badge variant="outline" className="text-[10px]">
+                              {kindLabel}
+                            </Badge>
                           </div>
 
                           {a.notes && (
@@ -241,118 +244,159 @@ function Agenda() {
                             </p>
                           )}
                         </div>
-{kindLabel}
-Alertar
 
-<Button 
-size="icon" 
-variant="ghost" 
-onClick={() => openEdit(a)} 
-aria-label="Editar compromisso" 
-title="Editar compromisso" 
-className="h-8 w-8 text-slate-500 hover:text-slate-900 hover:bg-slate-100" 
->
+                        <div className="flex items-center gap-1 sm:self-center shrink-0">
+                          <a
+                            href={googleUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center justify-center h-8 px-2.5 text-xs font-medium rounded-md text-slate-600 hover:bg-slate-100 transition-colors gap-1"
+                            title="Adicionar ao Google Agenda"
+                          >
+                            <CalendarClock className="h-3.5 w-3.5 text-blue-600" />
+                            <span className="hidden md:inline">Google Agenda</span>
+                          </a>
 
-<Button 
-size="icon" 
-variant="ghost" 
-onClick={() => confirm("Excluir compromisso?") && remove.mutate(a.id)} 
-aria-label="Excluir" 
-title="Excluir compromisso" 
-className="h-8 w-8 text-slate-400 hover:text-red-600 hover:bg-red-50" 
-> 
-); 
-})} 
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => openEdit(a)}
+                            aria-label="Editar compromisso"
+                            title="Editar compromisso"
+                            className="h-8 w-8 text-slate-500 hover:text-slate-900 hover:bg-slate-100"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
 
-)}
-{editingId ? "Editar compromisso" : "Novo compromisso"} 
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => confirm("Excluir compromisso?") && remove.mutate(a.id)}
+                            aria-label="Excluir"
+                            title="Excluir compromisso"
+                            className="h-8 w-8 text-slate-400 hover:text-red-600 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            );
+          })}
+        </div>
+      )}
 
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>
+              {editingId ? "Editar compromisso" : "Novo compromisso"}
+            </DialogTitle>
+          </DialogHeader>
 
-<form 
-className="grid grid-cols-2 gap-4 pt-2" 
-onSubmit={(e) => { 
-e.preventDefault(); 
-const startsAtIso = const startsAtIso = new Date(f.date + "T" + f.time).toISOString();
-const clientName = clients.find((c) => c.id === f.client_id)?.name; 
-const propertyTitle = properties.find((p) => p.id === f.property_id)?.title;
-save.mutate( 
-{ 
-...(editingId ? { id: editingId } : {}), 
-title: f.title, 
-kind: f.kind, 
-starts_at: startsAtIso, 
-client_id: f.client_id || null, 
-property_id: f.property_id || null, 
-notes: f.notes || null, 
-}, 
-{ 
-onSuccess: () => { 
-if (syncGoogle) { 
-const url = buildGoogleCalendarUrl({ 
-title: f.title, 
-startsAtIso, 
-clientName, 
-propertyTitle, 
-notes: f.notes || null, 
-}); 
-window.open(url, "_blank", "noopener,noreferrer"); 
-} 
-setOpen(false); 
-setEditingId(null); 
-setF(blankForm()); 
-}, 
-} 
-); 
-}} 
-> 
+          <form
+            className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const startsAtIso = new Date(f.date + "T" + f.time).toISOString();
+              const clientName = clients.find((c) => c.id === f.client_id)?.name;
+              const propertyTitle = properties.find((p) => p.id === f.property_id)?.title;
 
-<Input 
-required 
-placeholder="Ex: Visita ao apartamento decorado" 
-value={f.title} 
-onChange={(e) => set("title")(e.target.value)} 
-/> 
+              save.mutate(
+                {
+                  ...(editingId ? { id: editingId } : {}),
+                  title: f.title,
+                  kind: f.kind,
+                  starts_at: startsAtIso,
+                  client_id: f.client_id || null,
+                  property_id: f.property_id || null,
+                  notes: f.notes || null,
+                },
+                {
+                  onSuccess: () => {
+                    if (syncGoogle) {
+                      const url = buildGoogleCalendarUrl({
+                        title: f.title,
+                        startsAtIso,
+                        clientName,
+                        propertyTitle,
+                        notes: f.notes || null,
+                      });
+                      window.open(url, "_blank", "noopener,noreferrer");
+                    }
+                    setOpen(false);
+                    setEditingId(null);
+                    setF(blankForm());
+                  },
+                }
+              );
+            }}
+          >
+            <div className="col-span-2">
+              <Field label="Título do compromisso">
+                <Input
+                  required
+                  placeholder="Ex: Visita ao apartamento decorado"
+                  value={f.title}
+                  onChange={(e) => set("title")(e.target.value)}
+                />
+              </Field>
+            </div>
 
+            <Field label="Tipo">
+              <SelectField value={f.kind} onChange={set("kind")} options={APPOINTMENT_KINDS} />
+            </Field>
 
-<SelectField value={f.kind} onChange={set("kind")} options={APPOINTMENT_KINDS} /> 
+            <div className="grid grid-cols-2 gap-2">
+              <Field label="Data">
+                <Input type="date" required value={f.date} onChange={(e) => set("date")(e.target.value)} />
+              </Field>
+              <Field label="Horário">
+                <Input type="time" required value={f.time} onChange={(e) => set("time")(e.target.value)} />
+              </Field>
+            </div>
 
+            <Field label="Cliente (Opcional)">
+              <SelectField
+                value={f.client_id}
+                onChange={set("client_id")}
+                options={clients.map((c) => ({ id: c.id, label: c.name }))}
+              />
+            </Field>
 
-<Input type="date" required value={f.date} onChange={(e) => set("date")(e.target.value)} /> 
+            <Field label="Imóvel (Opcional)">
+              <SelectField
+                value={f.property_id}
+                onChange={set("property_id")}
+                options={properties.map((p) => ({ id: p.id, label: p.title }))}
+              />
+            </Field>
 
+            <div className="col-span-2">
+              <Field label="Observações">
+                <Textarea
+                  rows={3}
+                  placeholder="Detalhes adicionais, endereço de encontro ou código do portão..."
+                  value={f.notes}
+                  onChange={(e) => set("notes")(e.target.value)}
+                />
+              </Field>
+            </div>
 
-<Input type="time" required value={f.time} onChange={(e) => set("time")(e.target.value)} /> 
-
-
-<SelectField 
-value={f.client_id} 
-onChange={set("client_id")} 
-options={clients.map((c) => ({ id: c.id, label: c.name }))} 
-/> 
-
-
-<SelectField 
-value={f.property_id} 
-onChange={set("property_id")} 
-options={properties.map((p) => ({ id: p.id, label: p.title }))} 
-/> 
-
-
-<Textarea 
-rows={3} 
-placeholder="Detalhes adicionais, endereço de encontro ou código do portão..." 
-value={f.notes} 
-onChange={(e) => set("notas")(e.target.value)} 
-/>
-<Button type="button" variant="outline" onClick={() => setOpen(false)}>
-Cancelar
-
-
-{save.isPending ? "Salvando..." : editingId ? "Salvar alterações" : "Agendar compromisso"}
-
-
-
-
-
-
-);
+            <div className="col-span-2 flex items-center justify-end gap-3 pt-4 border-t">
+              <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={save.isPending}>
+                {save.isPending ? "Salvando..." : editingId ? "Salvar alterações" : "Agendar compromisso"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
 }
