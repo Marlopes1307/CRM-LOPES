@@ -71,3 +71,72 @@ export function emptyToNull(obj: Record<string, unknown>): Record<string, any> {
   for (const [k, v] of Object.entries(obj)) out[k] = v === "" ? null : v;
   return out;
 }
+export type UserProfile = {
+  id: string;
+  email: string | null;
+  full_name: string | null;
+  role: "corretor" | "gerente";
+  created_at?: string;
+};
+
+export function useManagerAccess() {
+  const qc = useQueryClient();
+
+  const { data: profiles = [], isLoading } = useQuery({
+    queryKey: ["profiles"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles" as never)
+        .select("*")
+        .order("created_at", { ascending: true });
+      if (error) return [] as UserProfile[];
+      return (data ?? []) as unknown as UserProfile[];
+    },
+  });
+
+  const { data: currentUserId } = useQuery({
+    queryKey: ["current-user-id"],
+    queryFn: async () => {
+      const { data } = await supabase.auth.getUser();
+      return data.user?.id ?? null;
+    },
+  });
+
+  const updateProfile = useMutation({
+    mutationFn: async ({
+      id,
+      role,
+      full_name,
+    }: {
+      id: string;
+      role?: "corretor" | "gerente";
+      full_name?: string;
+    }) => {
+      const updates: Record<string, unknown> = {};
+      if (role !== undefined) updates.role = role;
+      if (full_name !== undefined) updates.full_name = full_name;
+
+      const { error } = await supabase
+        .from("profiles" as never)
+        .update(updates as never)
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["profiles"] });
+      toast.success("Perfil atualizado!");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const me = profiles.find((p) => p.id === currentUserId);
+  const isManager = me?.role === "gerente";
+
+  const getBrokerName = (userId?: string | null) => {
+    if (!userId) return null;
+    const p = profiles.find((x) => x.id === userId);
+    return p?.full_name || p?.email?.split("@") || null;
+  };
+
+  return { isManager, profiles, me, isLoading, updateProfile, getBrokerName };
+}
