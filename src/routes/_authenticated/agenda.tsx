@@ -272,7 +272,7 @@ className="h-8 w-8 text-slate-400 hover:text-red-600 hover:bg-red-50"
 className="grid grid-cols-2 gap-4 pt-2" 
 onSubmit={(e) => { 
 e.preventDefault(); 
-const startsAtIso = new Date(`${f.date}T${f.time}`).toISOString();
+const startsAtIso = const startsAtIso = new Date(f.date + "T" + f.time).toISOString();
 const clientName = clients.find((c) => c.id === f.client_id)?.name; 
 const propertyTitle = properties.find((p) => p.id === f.property_id)?.title;
 save.mutate( 
