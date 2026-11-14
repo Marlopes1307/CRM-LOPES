@@ -23,6 +23,7 @@ function NotFoundComponent() {
         <p className="mt-2 text-sm text-muted-foreground">
           The page you're looking for doesn't exist or has been moved.
         </p>
+              { title: "Mota Negócios Imobiliários" },
         <div className="mt-6">
           <Link
             to="/"
