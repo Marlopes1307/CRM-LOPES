@@ -65,10 +65,10 @@ function Layout() {
             </div>
             <div>
               <span className="font-display text-base font-bold tracking-tight text-white block leading-none">
-                Corretor CRM
+                Mota Negócios
               </span>
               <span className="text-[11px] text-slate-400 font-medium mt-1 block">
-                Gestão Imobiliária
+                Imobiliários
               </span>
             </div>
           </div>
