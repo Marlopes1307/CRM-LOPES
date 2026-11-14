@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Corretor CRM — Lopes Imóveis GYN" },
+      { title: "Mota Negócios Imobiliários — CRM e Gestão" },
       { name: "description", content: "Clientes, funil de vendas, imóveis com fotos, agenda de visitas e comissões em um só lugar." },
       { property: "og:title", content: "Lopes Imóveis GYN" },
       { property: "og:description", content: "O CRM feito para o corretor de imóveis autônomo." },
@@ -26,7 +26,8 @@ function Index() {
     <div className="min-h-screen">
       <section className="bg-hero text-primary-foreground">
         <div className="mx-auto max-w-6xl px-6 py-6 flex items-center justify-between">
-          <span className="font-display text-xl">Corretor CRM</span>
+          <span className="font-display text-xl">Mota Negócios Imobiliários
+          </span>
           <Button asChild variant="secondary" size="sm">
             <Link to="/auth">Entrar</Link>
           </Button>
