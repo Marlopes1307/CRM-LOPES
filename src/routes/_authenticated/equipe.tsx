@@ -14,7 +14,7 @@ export const Route = createFileRoute("/_authenticated/equipe" as never)({
 });
 
 const initials = (s: string) =>
-  s.trim().split(/\s+/).slice(0, 2).map((n) => n[0]?.toUpperCase() ?? "").join("");
+  s.trim().split(/\s+/).slice(0, 2).map((n) => n?.toUpperCase() ?? "").join("");
 
 function TeamPage() {
   const { isManager, profiles, me, isLoading, updateProfile } = useManagerAccess();
@@ -53,7 +53,7 @@ function TeamPage() {
         {profiles.map((m) => {
           const isMe = m.id === me?.id;
           const isMgr = m.role === "gerente";
-          const name = m.full_name || m.email?.split("@")[0] || "Usuário";
+          const name = m.full_name || m.email?.split("@") || "Usuário";
           const mClients = clients.filter((c) => (c as Record<string, unknown>).user_id === m.id).length;
           const mDeals = deals.filter((d) => (d as Record<string, unknown>).user_id === m.id);
           const mComm = mDeals.reduce((sum, d) => sum + commission(Number(d.value), Number(d.commission_pct)), 0);
