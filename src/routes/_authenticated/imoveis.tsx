@@ -228,7 +228,9 @@ function sharePropertyOnWhatsApp(p: Property) {
     .filter(Boolean)
     .join("\n");
 
-  window.open(`https://wa.me{encodeURIComponent(lines)}`, "_blank");
+    const url = "https://wa.me" + encodeURIComponent(lines);
+  window.open(url, "_blank");
+
 }
 
 function PropertyDetailsDialog({
