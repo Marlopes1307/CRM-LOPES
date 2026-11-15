@@ -259,7 +259,8 @@ function PropertyDetailsDialog({
       .filter(Boolean)
       .join("\n");
 
-    window.open(`https://wa.me{encodeURIComponent(lines)}`, "_blank");
+    const whatsappUrl = "https://wa.me" + encodeURIComponent(lines);
+    window.open(whatsappUrl, "_blank");
   }
 
   return (
@@ -273,81 +274,104 @@ function PropertyDetailsDialog({
             </span>
           </div>
           <DialogTitle className="text-xl pt-1">{p.title}</DialogTitle>
-          <p className="text-sm text-muted-foreground">{[p.address, p.city].filter(Boolean).join(", ")}</p>
+          <p className="text-sm text-muted-foreground">
+            {[p.address, p.city].filter(Boolean).join(", ")}
+          </p>
         </DialogHeader>
 
         {photos.length > 0 ? (
           <div className="space-y-2">
-{currentUrl ? (
+            <div className="aspect-video w-full overflow-hidden rounded-xl bg-muted">
+              {currentUrl ? (
+                <img src={currentUrl} alt={p.title} className="h-full w-full object-cover" />
+              ) : (
+                <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+                  Carregando foto...
+                </div>
+              )}
+            </div>
+            {photos.length > 1 && (
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                {photos.map((path, idx) => (
+                  <button
+                    key={path}
+                    type="button"
+                    onClick={() => setActivePhoto(idx)}
+                    className={`h-16 w-24 shrink-0 overflow-hidden rounded-lg border-2 ${
+                      activePhoto === idx ? "border-primary" : "border-transparent opacity-70"
+                    }`}
+                  >
+                    {urls?.[path] && (
+                      <img src={urls[path]} alt="" className="h-full w-full object-cover" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="flex h-40 items-center justify-center rounded-xl bg-muted text-sm text-muted-foreground">
+            Nenhuma foto cadastrada
+          </div>
+        )}
 
-) : (
+        <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border bg-muted/30 p-4">
+          <div>
+            <p className="text-xs text-muted-foreground">Valor</p>
+            <p className="text-xl font-bold text-primary">
+              {p.price != null ? brl(p.price) : "Sob consulta"}
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+            {p.bedrooms != null && (
+              <span className="flex items-center gap-1.5">
+                <BedDouble className="h-4 w-4" /> {p.bedrooms} quartos
+              </span>
+            )}
+            {p.bathrooms != null && (
+              <span className="flex items-center gap-1.5">
+                <Bath className="h-4 w-4" /> {p.bathrooms} banheiros
+              </span>
+            )}
+            {p.parking != null && (
+              <span className="flex items-center gap-1.5">
+                <Car className="h-4 w-4" /> {p.parking} vagas
+              </span>
+            )}
+            {p.area != null && (
+              <span className="flex items-center gap-1.5">
+                <Maximize className="h-4 w-4" /> {p.area} m²
+              </span>
+            )}
+          </div>
+        </div>
 
-Carregando foto...
+        {p.description && (
+          <div className="space-y-1">
+            <h4 className="text-sm font-semibold">Descrição do imóvel</h4>
+            <p className="whitespace-pre-line text-sm text-muted-foreground leading-relaxed">
+              {p.description}
+            </p>
+          </div>
+        )}
 
-)}
-
-{photos.length > 1 && (
-
-{photos.map((path, idx) => (
-<button
-key={path}
-type="button"
-onClick={() => setActivePhoto(idx)}
-className={h-16 w-24 shrink-0 overflow-hidden rounded-lg border-2 ${ activePhoto === idx ? "border-primary" : "border-transparent opacity-70" }}
->
-{urls?.[path] && }
-
-))}
-
-)}
-
-) : (
-
-Nenhuma foto cadastrada
-
-)}
-Valor
-{p.price != null ? brl(p.price) : "Sob consulta"}
-
-
-{p.bedrooms != null && (
-
- {p.bedrooms} quartos
-
-)}
-{p.bathrooms != null && (
-
- {p.bathrooms} banheiros
-
-)}
-{p.parking != null && (
-
- {p.parking} vagas
-
-)}
-{p.area != null && (
-
- {p.area} m²
-
-)}
-
-{p.description && (
-
-Descrição do imóvel
-{p.description}
-
-)}
-{p.captador_name ? Captado por: ${p.captador_name} : ""}
-
-
-
-Compartilhar no WhatsApp
-
-
-
-
-);
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4">
+          <p className="text-xs text-muted-foreground">
+            {p.captador_name ? `Captado por: ${p.captador_name}` : ""}
+          </p>
+          <Button
+            type="button"
+            onClick={shareWhatsApp}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white"
+          >
+            Compartilhar no WhatsApp
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
 }
+
 function PropertyCard({
 p,
 canEdit,
