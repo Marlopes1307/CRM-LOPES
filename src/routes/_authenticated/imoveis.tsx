@@ -377,37 +377,53 @@ p,
 canEdit,
 onView,
 onEdit,
-onDelete,
+  onDelete,
 }: {
-p: Property;
-canEdit: boolean;
-onView: () => void;
-onEdit: () => void;
-onDelete: () => void;
+  p: Property;
+  canEdit: boolean;
+  onView: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
 }) {
-const { data: urls } = usePhotoUrls((p.photos ?? []).slice(0, 1));
-const cover = p.photos?.[0] ? urls?.[p.photos[0]] : undefined;
-const status = PROPERTY_STATUS.find((s) => s.id === p.status)?.label;
-return (
+  const { data: urls } = usePhotoUrls((p.photos ?? []).slice(0, 1));
+  const cover = p.photos?.[0] ? urls?.[p.photos[0]] : undefined;
+  const status = PROPERTY_STATUS.find((s) => s.id === p.status)?.label;
 
+  return (
+    <div className="flex flex-col justify-between overflow-hidden rounded-xl border bg-card shadow-card">
+      <div onClick={onView} className="cursor-pointer">
+        <div className="relative aspect-[4/3] bg-muted">
+          {cover ? (
+            <img src={cover} alt={p.title} className="h-full w-full object-cover" />
+          ) : (
+            <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+              Sem foto
+            </div>
+          )}
+          <Badge className="absolute left-3 top-3">{status}</Badge>
+          {(p.photos?.length ?? 0) > 1 && (
+            <span className="absolute right-3 bottom-3 rounded bg-card px-2 py-0.5 text-xs">
+              {p.photos.length} fotos
+            </span>
+          )}
+        </div>
 
+        <div className="p-4">
+          <p className="text-xs uppercase tracking-wide text-muted-foreground">
+            {p.kind} · {p.purpose}
+          </p>
+          <h3 className="mt-1 text-lg font-semibold leading-snug">{p.title}</h3>
+          <p className="text-sm text-muted-foreground">
+            {[p.address, p.city].filter(Boolean).join(", ")}
+          </p>
 
-{cover ? () : (Sem foto)}
-  
-{status}
-{(p.photos?.length ?? 0) > 1 && (
+          {p.price != null && (
+            <p className="mt-2 text-lg font-bold text-primary">{brl(p.price)}</p>
+          )}
 
-{p.photos.length} fotos
+          <div className="mt-3 flex flex-wrap gap-4 text-xs text-muted-foreground">
+            {p.bedrooms != null && (
 
-)}
-{p.kind} · {p.purpose}
-
-
-{p.title}
-
-{[p.address, p.city].filter(Boolean).join(", ")}
-{p.price != null && {brl(p.price)}}
-{p.bedrooms != null && (
 
 
 {p.bedrooms}
