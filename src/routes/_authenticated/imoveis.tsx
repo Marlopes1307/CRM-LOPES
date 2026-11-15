@@ -271,7 +271,7 @@ function PropertyDetailsDialog({
           <div className="space-y-2">
 {currentUrl ? (
 
-) : (
+) :} (
 
 Carregando foto...
 
