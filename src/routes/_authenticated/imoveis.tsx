@@ -392,11 +392,8 @@ return (
 
 
 
-{cover ? (
-
-) : (
-Sem foto
-)}
+{cover ? () : (Sem foto)}
+  
 {status}
 {(p.photos?.length ?? 0) > 1 && (
 
