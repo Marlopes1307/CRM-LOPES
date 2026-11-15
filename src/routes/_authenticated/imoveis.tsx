@@ -207,10 +207,10 @@ function PropertyForm({ initial, onDone }: { initial: Property | null; onDone: (
     </form>
   );
 }
-function getWhatsAppShareUrl(p: Property) {
+function buildPropertyShareText(p: Property) {
   const shareUrl = `${window.location.origin}/imovel/${p.id}`;
 
-  const lines = [
+  return [
     "*" + p.title + "*",
     p.kind.toUpperCase() + " - " + (p.purpose === "venda" ? "Venda" : "Aluguel"),
     p.price != null ? "Valor: *" + brl(p.price) + "*" : null,
@@ -230,22 +230,21 @@ function getWhatsAppShareUrl(p: Property) {
   ]
     .filter(Boolean)
     .join("\n");
-
-  return {
-    lines,
-    whatsappUrl: "https://whatsapp.com" + encodeURIComponent(lines),
-  };
+}
+function getWhatsAppShareUrl(p: Property): string {
+  const lines = buildPropertyShareText(p);
+  return "https://whatsapp.com" + encodeURIComponent(lines);
 }
 
 function sharePropertyOnWhatsApp(p: Property) {
-  const { lines, whatsappUrl } = getWhatsAppShareUrl(p);
+  const lines = buildPropertyShareText(p);
+  const whatsappUrl = getWhatsAppShareUrl(p);
 
   navigator.clipboard?.writeText(lines).catch(() => {});
   toast.success("Ficha copiada! Abrindo WhatsApp...");
 
   window.open(whatsappUrl, "_blank", "noopener,noreferrer");
 }
-
 function PropertyDetailsDialog({
   p,
   open,
