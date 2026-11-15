@@ -1,7 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { Bath, BedDouble, Car, ImagePlus, Maximize, Pencil, Plus, Search, Trash2, X } from "lucide-react";
+import {
+  Bath,
+  BedDouble,
+  Car,
+  Eye,
+  ImagePlus,
+  Maximize,
+  Pencil,
+  Plus,
+  Share2,
+  Trash2,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -20,8 +32,6 @@ export const Route = createFileRoute("/_authenticated/imoveis")({
 
 type Property = Row<"properties"> & {
   captador_name?: string | null;
-  safe_owner_name?: string | null;
-  safe_owner_phone?: string | null;
 };
 
 const BUCKET = "property-photos";
@@ -31,7 +41,9 @@ function useCurrentUser() {
     queryKey: ["current-user-profile"],
     staleTime: 10 * 60 * 1000,
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) return null;
       const { data: profile } = await supabase
         .from("profiles")
@@ -71,6 +83,7 @@ const blank = {
   owner_name: "",
   owner_phone: "",
 };
+
 const NUM = ["price", "bedrooms", "bathrooms", "parking", "area"];
 
 function PropertyForm({ initial, onDone }: { initial: Property | null; onDone: () => void }) {
@@ -81,7 +94,9 @@ function PropertyForm({ initial, onDone }: { initial: Property | null; onDone: (
       ? (Object.fromEntries(
           Object.keys(blank).map((k) => [
             k,
-            (initial as Record<string, unknown>)[k] == null ? "" : String((initial as Record<string, unknown>)[k]),
+            (initial as Record<string, unknown>)[k] == null
+              ? ""
+              : String((initial as Record<string, unknown>)[k]),
           ]),
         ) as typeof blank)
       : blank,
@@ -112,7 +127,9 @@ function PropertyForm({ initial, onDone }: { initial: Property | null; onDone: (
       onSubmit={(e) => {
         e.preventDefault();
         const v = emptyToNull(
-          Object.fromEntries(Object.entries(f).map(([k, x]) => [k, NUM.includes(k) && x ? Number(x) : x])),
+          Object.fromEntries(
+            Object.entries(f).map(([k, x]) => [k, NUM.includes(k) && x ? Number(x) : x]),
+          ),
         );
         save.mutate(
           { ...(initial ? { id: initial.id } : {}), ...v, title: f.title, photos } as never,
@@ -198,7 +215,13 @@ function PropertyForm({ initial, onDone }: { initial: Property | null; onDone: (
           <label className="flex h-20 w-28 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed text-xs text-muted-foreground hover:bg-muted">
             <ImagePlus className="h-5 w-5" />
             {uploading ? "Enviando..." : "Adicionar"}
-            <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => upload(e.target.files)} />
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={(e) => upload(e.target.files)}
+            />
           </label>
         </div>
       </div>
@@ -208,6 +231,31 @@ function PropertyForm({ initial, onDone }: { initial: Property | null; onDone: (
     </form>
   );
 }
+
+function sharePropertyWhatsApp(p: Property) {
+  const lines = [
+    `*${p.title}*`,
+    `${p.kind.toUpperCase()} · ${p.purpose === "venda" ? "Venda" : "Aluguel"}`,
+    p.price != null ? `Valor: *${brl(p.price)}*` : null,
+    [p.address, p.city].filter(Boolean).length
+      ? `Localização: ${[p.address, p.city].filter(Boolean).join(", ")}`
+      : null,
+    [
+      p.bedrooms != null ? `${p.bedrooms} quartos` : null,
+      p.bathrooms != null ? `${p.bathrooms} banheiros` : null,
+      p.parking != null ? `${p.parking} vagas` : null,
+      p.area != null ? `${p.area} m²` : null,
+    ]
+      .filter(Boolean)
+      .join(" · "),
+    p.description ? `\n${p.description}` : null,
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  window.open(`https://wa.me{encodeURIComponent(lines)}`, "_blank");
+}
+
 function PropertyDetailsDialog({
   p,
   open,
@@ -226,32 +274,16 @@ function PropertyDetailsDialog({
   const currentUrl = photos[activePhoto] ? urls?.[photos[activePhoto]] : undefined;
   const status = PROPERTY_STATUS.find((s) => s.id === p.status)?.label;
 
-  function shareWhatsApp() {
-    const lines = [
-      `*${p!.title}*`,
-      `${p!.kind.toUpperCase()} · ${p!.purpose === "venda" ? "Venda" : "Aluguel"}`,
-      p!.price != null ? `Valor: *${brl(p!.price)}*` : null,
-      [p!.address, p!.city].filter(Boolean).length
-        ? `Localização: ${[p!.address, p!.city].filter(Boolean).join(", ")}`
-        : null,
-      [
-        p!.bedrooms != null ? `${p!.bedrooms} quartos` : null,
-        p!.bathrooms != null ? `${p!.bathrooms} banheiros` : null,
-        p!.parking != null ? `${p!.parking} vagas` : null,
-        p!.area != null ? `${p!.area} m²` : null,
-      ]
-        .filter(Boolean)
-        .join(" · "),
-      p!.description ? `\n${p!.description}` : null,
-    ]
-      .filter(Boolean)
-      .join("\n");
-
-    window.open(`https://wa.me{encodeURIComponent(lines)}`, "_blank");
-  }
-
   return (
-    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        if (!v) {
+          setActivePhoto(0);
+          onClose();
+        }
+      }}
+    >
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center gap-2">
@@ -262,278 +294,263 @@ function PropertyDetailsDialog({
           </div>
           <DialogTitle className="text-xl pt-1">{p.title}</DialogTitle>
           <p className="text-sm text-muted-foreground">
-            {[p.address, p.city].filter(Boolean).join(", ")}
-          </p>
-        </DialogHeader>
+{[p.address, p.city].filter(Boolean).join(", ")}
 
-        {/* Galeria de fotos */}
-        {photos.length > 0 ? (
-          <div className="space-y-2">
-            <div className="aspect-video w-full overflow-hidden rounded-xl bg-muted">
-              {currentUrl ? (
-                <img src={currentUrl} alt={p.title} className="h-full w-full object-cover" />
-              ) : (
-                <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-                  Carregando foto...
-                </div>
-              )}
-            </div>
-            {photos.length > 1 && (
-              <div className="flex gap-2 overflow-x-auto pb-1">
-                {photos.map((path, idx) => (
-                  <button
-                    key={path}
-                    type="button"
-                    onClick={() => setActivePhoto(idx)}
-                    className={`h-16 w-24 shrink-0 overflow-hidden rounded-lg border-2 ${
-                      activePhoto === idx ? "border-primary" : "border-transparent opacity-70"
-                    }`}
-                  >
-                    {urls?.[path] && (
-                      <img src={urls[path]} alt="" className="h-full w-full object-cover" />
-                    )}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="flex h-40 items-center justify-center rounded-xl bg-muted text-sm text-muted-foreground">
-            Nenhuma foto cadastrada
-          </div>
-        )}
+{photos.length > 0 ? (
 
-        {/* Preço e características */}
-        <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border bg-muted/30 p-4">
-          <div>
-            <p className="text-xs text-muted-foreground">Valor</p>
-            <p className="text-xl font-bold text-primary">
-              {p.price != null ? brl(p.price) : "Sob consulta"}
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-            {p.bedrooms != null && (
-              <span className="flex items-center gap-1.5">
-                <BedDouble className="h-4 w-4" /> {p.bedrooms} quartos
-              </span>
-            )}
-            {p.bathrooms != null && (
-              <span className="flex items-center gap-1.5">
-                <Bath className="h-4 w-4" /> {p.bathrooms} banheiros
-              </span>
-            )}
-            {p.parking != null && (
-              <span className="flex items-center gap-1.5">
-                <Car className="h-4 w-4" /> {p.parking} vagas
-              </span>
-            )}
-            {p.area != null && (
-              <span className="flex items-center gap-1.5">
-                <Maximize className="h-4 w-4" /> {p.area} m²
-              </span>
-            )}
-          </div>
-        </div>
 
-        {/* Descrição completa */}
-        {p.description && (
-          <div className="space-y-1">
-            <h4 className="text-sm font-semibold">Descrição do imóvel</h4>
-            <p className="whitespace-pre-line text-sm text-muted-foreground leading-relaxed">
-              {p.description}
-            </p>
-          </div>
-        )}
+{currentUrl ? (
 
-        {/* Rodapé com botão de compartilhar no WhatsApp */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4">
-          <p className="text-xs text-muted-foreground">
-            {p.captador_name ? `Captado por: ${p.captador_name}` : ""}
-          </p>
-          <Button type="button" onClick={shareWhatsApp} className="bg-emerald-600 hover:bg-emerald-700 text-white">
-            Compartilhar no WhatsApp
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
+) : (
+
+Carregando foto...
+
+)}
+
+{photos.length > 1 && (
+
+{photos.map((path, idx) => (
+<button
+key={path}
+type="button"
+onClick={() => setActivePhoto(idx)}
+className={h-16 w-24 shrink-0 overflow-hidden rounded-lg border-2 ${ activePhoto === idx ? "border-primary" : "border-transparent opacity-70" }}
+>
+{urls?.[path] && (
+
+)}
+
+))}
+
+)}
+
+) : (
+
+Nenhuma foto cadastrada
+
+)}
+Valor
+
+{p.price != null ? brl(p.price) : "Sob consulta"}
+
+
+
+{p.bedrooms != null && (
+
+ {p.bedrooms} quartos
+
+)}
+{p.bathrooms != null && (
+
+ {p.bathrooms} banheiros
+
+)}
+{p.parking != null && (
+
+ {p.parking} vagas
+
+)}
+{p.area != null && (
+
+ {p.area} m²
+
+)}
+
+{p.description && (
+
+Descrição do imóvel
+
+{p.description}
+
+
+)}
+{p.captador_name ? Captado por: ${p.captador_name} : ""}
+
+<Button
+type="button"
+onClick={() => sharePropertyWhatsApp(p)}
+className="bg-emerald-600 hover:bg-emerald-700 text-white"
+>
+
+Compartilhar no WhatsApp
+
+
+
+
+);
 }
 function PropertyCard({
-  onClick={() => setViewing(p)}
-  p,
-  canEdit,
-  onEdit,
-  onDelete,
+p,
+canEdit,
+onView,
+onEdit,
+onDelete,
 }: {
-  p: Property;
-  canEdit: boolean;
-  onEdit: () => void;
-  onDelete: () => void;
+p: Property;
+canEdit: boolean;
+onView: () => void;
+onEdit: () => void;
+onDelete: () => void;
 }) {
-  const { data: urls } = usePhotoUrls((p.photos ?? []).slice(0, 1));
-  const cover = p.photos?.[0] ? urls?.[p.photos[0]] : undefined;
-  const status = PROPERTY_STATUS.find((s) => s.id === p.status)?.label;
+const { data: urls } = usePhotoUrls((p.photos ?? []).slice(0, 1));
+const cover = p.photos?.[0] ? urls?.[p.photos[0]] : undefined;
+const status = PROPERTY_STATUS.find((s) => s.id === p.status)?.label;
+return (
 
-  return (
-    <div className="flex flex-col justify-between overflow-hidden rounded-xl border bg-card shadow-card">
-      <div>
-        <div className="relative aspect-[4/3] bg-muted">
-          {cover ? (
-            <img src={cover} alt={p.title} className="h-full w-full object-cover" />
-          ) : (
-            <div className="flex h-full items-center justify-center text-sm text-muted-foreground">Sem foto</div>
-          )}
-          <Badge className="absolute left-3 top-3">{status}</Badge>
-          {(p.photos?.length ?? 0) > 1 && (
-            <span className="absolute right-3 bottom-3 rounded bg-card px-2 py-0.5 text-xs">
-              {p.photos.length} fotos
-            </span>
-          )}
-        </div>
 
-        <div className="p-4">
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">
-            {p.kind} · {p.purpose}
-          </p>
-          <h3 className="mt-1 text-lg font-semibold leading-snug">{p.title}</h3>
-          <p className="text-sm text-muted-foreground">{[p.address, p.city].filter(Boolean).join(", ")}</p>
 
-          {p.price != null && <p className="mt-2 text-lg font-bold text-primary">{brl(p.price)}</p>}
+{cover ? (
 
-          <div className="mt-3 flex flex-wrap gap-4 text-xs text-muted-foreground">
-            {p.bedrooms != null && (
-              <span className="flex items-center gap-1">
-                <BedDouble className="h-3.5 w-3.5" />
-                {p.bedrooms}
-              </span>
-            )}
-            {p.bathrooms != null && (
-              <span className="flex items-center gap-1">
-                <Bath className="h-3.5 w-3.5" />
-                {p.bathrooms}
-              </span>
-            )}
-            {p.parking != null && (
-              <span className="flex items-center gap-1">
-                <Car className="h-3.5 w-3.5" />
-                {p.parking}
-              </span>
-            )}
-            {p.area != null && (
-              <span className="flex items-center gap-1">
-                <Maximize className="h-3.5 w-3.5" />
-                {p.area} m²
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
+) : (
 
-      <div className="px-4 pb-4">
-        {canEdit ? (
-          <div className="flex items-center justify-between border-t pt-3">
-            <div className="text-xs text-muted-foreground">
-              {p.owner_name && <span>Prop.: {p.owner_name}</span>}
-              {p.owner_phone && <span> · {p.owner_phone}</span>}
-            </div>
-            <div className="flex gap-1">
-              <Button variant="ghost" size="icon" onClick={onEdit} aria-label="Editar">
-                <Pencil className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="icon" onClick={onDelete} aria-label="Excluir">
-                <Trash2 className="h-4 w-4 text-destructive" />
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <div className="border-t pt-3">
-            <p className="text-xs font-medium text-amber-600">
-              Captado por: {p.captador_name || "Outro corretor"}
-            </p>
-          </div>
-        )}
-      </div>
-    </div>
-  );
+Sem foto
+
+)}
+{status}
+{(p.photos?.length ?? 0) > 1 && (
+
+{p.photos.length} fotos
+
+)}
+{p.kind} · {p.purpose}
+
+
+{p.title}
+
+
+{[p.address, p.city].filter(Boolean).join(", ")}
+{p.price != null && {brl(p.price)}}
+{p.bedrooms != null && (
+
+
+{p.bedrooms}
+
+)}
+{p.bathrooms != null && (
+
+
+{p.bathrooms}
+
+)}
+{p.parking != null && (
+
+
+{p.parking}
+
+)}
+{p.area != null && (
+
+
+{p.area} m²
+
+)}
+
+
+Ver fotos e detalhes
+
+<Button
+variant="outline"
+size="icon"
+onClick={() => sharePropertyWhatsApp(p)}
+title="Compartilhar no WhatsApp"
+aria-label="Compartilhar no WhatsApp"
+>
+
+
+{canEdit ? (
+
+
+{p.owner_name && Prop.: {p.owner_name}}
+{p.owner_phone &&  · {p.owner_phone}}
+
+
+
+
+
+
+
+
+
+
+) : (
+
+Captado por: {p.captador_name || "Outro corretor"}
+
+)}
+
+
+);
 }
-
 function PropertiesPage() {
-  const [viewing, setViewing] = useState<Property | null>(null);
-  const queryClient = useQueryClient();
-  const { data: me } = useCurrentUser();
-  const { remove } = useTable("properties");
-  const [open, setOpen] = useState(false);
-  const [editing, setEditing] = useState<Property | null>(null);
-  const [query, setQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [ownerFilter, setOwnerFilter] = useState<"all" | "mine">("all");
+const queryClient = useQueryClient();
+const { data: me } = useCurrentUser();
+const { remove } = useTable("properties");
+const [open, setOpen] = useState(false);
+const [editing, setEditing] = useState<Property | null>(null);
+const [viewing, setViewing] = useState<Property | null>(null);
+const [query, setQuery] = useState("");
+const [statusFilter, setStatusFilter] = useState("all");
+const [ownerFilter, setOwnerFilter] = useState<"all" | "mine">("all");
+const { data: list = [], isLoading } = useQuery({
+queryKey: ["shared_properties"],
+queryFn: async () => {
+const { data, error } = await supabase
+.from("shared_properties" as any)
+.select("*")
+.order("created_at", { ascending: false });
+if (error) throw error;
+return (data ?? []) as Property[];
+},
+});
+const filtered = useMemo(() => {
+return list.filter((p) => {
+if (ownerFilter === "mine" && p.user_id !== me?.id) return false;
+if (statusFilter !== "all" && p.status !== statusFilter) return false;
+if (query.trim()) {
+const q = query.toLowerCase();
+const match = [p.title, p.address, p.city, p.kind, p.captador_name]
+.filter(Boolean)
+.some((v) => String(v).toLowerCase().includes(q));
+if (!match) return false;
+}
+return true;
+});
+}, [list, ownerFilter, statusFilter, query, me?.id]);
+return (
 
-  const { data: list = [], isLoading } = useQuery({
-    queryKey: ["shared_properties"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("shared_properties" as any)
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return (data ?? []) as Property[];
-    },
-  });
+<PageHeader
+title="Imóveis"
+subtitle="Carteira compartilhada da equipe"
+action={
+<Button
+onClick={() => {
+setEditing(null);
+setOpen(true);
+}}
+>
 
-  const filtered = useMemo(() => {
-    return list.filter((p) => {
-      if (ownerFilter === "mine" && p.user_id !== me?.id) return false;
-      if (statusFilter !== "all" && p.status !== statusFilter) return false;
-      if (query.trim()) {
-        const q = query.toLowerCase();
-        const match = [p.title, p.address, p.city, p.kind, p.captador_name]
-          .filter(Boolean)
-          .some((v) => String(v).toLowerCase().includes(q));
-        if (!match) return false;
-      }
-      return true;
-    });
-  }, [list, ownerFilter, statusFilter, query, me?.id]);
+Novo imóvel
 
-  return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Imóveis"
-        subtitle="Carteira compartilhada da equipe"
-        action={
-          <Button
-            onClick={() => {
-              setEditing(null);
-              setOpen(true);
-            }}
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Novo imóvel
-          </Button>
-        }
-      />
+}
+/>
+<Input
+placeholder="Buscar por título, endereço, cidade ou captador..."
+value={query}
+onChange={(e) => setQuery(e.target.value)}
+className="sm:max-w-sm"
+/>
+<Button
+variant={ownerFilter === "all" ? "default" : "outline"}
+size="sm"
+onClick={() => setOwnerFilter("all")}
+>
+Todos ({list.length})
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <Input
-          placeholder="Buscar por título, endereço, cidade ou captador..."
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          className="sm:max-w-sm"
-        />
-
-        <div className="flex flex-wrap items-center gap-2">
-          <Button
-            variant={ownerFilter === "all" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setOwnerFilter("all")}
-          >
-            Todos ({list.length})
-          </Button>
-          <Button
-            variant={ownerFilter === "mine" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setOwnerFilter("mine")}
-          >
+<Button
+variant={ownerFilter === "mine" ? "default" : "outline"}
+size="sm"
+onClick={() => setOwnerFilter("mine")}
+>
             Meus imóveis
           </Button>
           <SelectField
@@ -543,11 +560,7 @@ function PropertiesPage() {
           />
         </div>
       </div>
-      <PropertyDetailsDialog
-  p={viewing}
-  open={Boolean(viewing)}
-  onClose={() => setViewing(null)}
-/>
+
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Carregando imóveis...</p>
       ) : filtered.length === 0 ? (
@@ -563,7 +576,11 @@ function PropertiesPage() {
                 key={p.id}
                 p={p}
                 canEdit={canEdit}
+                onView={() => setViewing(p)}
                 onEdit={() => {
+                  onView: () => void;
+                  onClick={onView}
+                  cursor-pointer
                   setEditing(p);
                   setOpen(true);
                 }}
@@ -592,6 +609,12 @@ function PropertiesPage() {
           />
         </DialogContent>
       </Dialog>
+
+      <PropertyDetailsDialog
+        p={viewing}
+        open={Boolean(viewing)}
+        onClose={() => setViewing(null)}
+      />
     </div>
   );
 }
