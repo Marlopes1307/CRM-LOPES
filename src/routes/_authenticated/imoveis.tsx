@@ -234,6 +234,19 @@ function getWhatsAppShareUrl(p: Property) {
 
 
 function PropertyDetailsDialog({
+            <Button
+            asChild
+            className="bg-emerald-600 hover:bg-emerald-700 text-white"
+          >
+            <a
+              href={getWhatsAppShareUrl(p)}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Compartilhar no WhatsApp
+            </a>
+          </Button>
+
   p,
   open,
   onClose,
@@ -355,6 +368,19 @@ function PropertyDetailsDialog({
   );
 }
 function PropertyCard({
+              <Button
+            asChild
+            size="sm"
+            className="bg-emerald-600 hover:bg-emerald-700 text-white"
+          >
+            <a
+              href={getWhatsAppShareUrl(p)}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              WhatsApp
+            </a>
+          </Button>
   p,
   canEdit,
   onView,
