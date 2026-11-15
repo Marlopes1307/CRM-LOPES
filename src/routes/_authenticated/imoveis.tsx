@@ -230,20 +230,8 @@ function getWhatsAppShareUrl(p: Property) {
 
   return "https://whatsapp.com" + encodeURIComponent(lines);
 }
-function PropertyDetailsDialog({
-            <Button
-            asChild
-            className="bg-emerald-600 hover:bg-emerald-700 text-white"
-          >
-            <a
-              href={getWhatsAppShareUrl(p)}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Compartilhar no WhatsApp
-            </a>
-          </Button>
 
+function PropertyDetailsDialog({
   p,
   open,
   onClose,
@@ -353,17 +341,23 @@ function PropertyDetailsDialog({
             {p.captador_name ? `Captado por: ${p.captador_name}` : ""}
           </p>
           <Button
-            type="button"
-            onClick={() => sharePropertyOnWhatsApp(p)}
+            asChild
             className="bg-emerald-600 hover:bg-emerald-700 text-white"
           >
-            Compartilhar no WhatsApp
+            <a
+              href={getWhatsAppShareUrl(p)}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Compartilhar no WhatsApp
+            </a>
           </Button>
         </div>
       </DialogContent>
     </Dialog>
   );
 }
+
 function PropertyCard({
               <Button
             asChild
