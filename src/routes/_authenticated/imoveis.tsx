@@ -209,29 +209,37 @@ function PropertyForm({ initial, onDone }: { initial: Property | null; onDone: (
 }
 function sharePropertyOnWhatsApp(p: Property) {
   const lines = [
-    `*${p.title}*`,
-    `${p.kind.toUpperCase()} · ${p.purpose === "venda" ? "Venda" : "Aluguel"}`,
-    p.price != null ? `Valor: *${brl(p.price)}*` : null,
+    "*" + p.title + "*",
+    p.kind.toUpperCase() + " - " + (p.purpose === "venda" ? "Venda" : "Aluguel"),
+    p.price != null ? "Valor: *" + brl(p.price) + "*" : null,
     [p.address, p.city].filter(Boolean).length
-      ? `Localização: ${[p.address, p.city].filter(Boolean).join(", ")}`
+      ? "Localização: " + [p.address, p.city].filter(Boolean).join(", ")
       : null,
     [
-      p.bedrooms != null ? `${p.bedrooms} quartos` : null,
-      p.bathrooms != null ? `${p.bathrooms} banheiros` : null,
-      p.parking != null ? `${p.parking} vagas` : null,
-      p.area != null ? `${p.area} m²` : null,
+      p.bedrooms != null ? p.bedrooms + " quartos" : null,
+      p.bathrooms != null ? p.bathrooms + " banheiros" : null,
+      p.parking != null ? p.parking + " vagas" : null,
+      p.area != null ? p.area + " m²" : null,
     ]
       .filter(Boolean)
-      .join(" · "),
-    p.description ? `\n${p.description}` : null,
+      .join(" | "),
+    p.description ? "\n" + p.description : null,
   ]
     .filter(Boolean)
     .join("\n");
 
-    const url = "https://wa.me" + encodeURIComponent(lines);
-  window.open(url, "_blank");
+  navigator.clipboard?.writeText(lines).catch(() => {});
+  toast.success("Ficha copiada! Abrindo WhatsApp...");
 
+  const link = document.createElement("a");
+  link.href = "https://whatsapp.com" + encodeURIComponent(lines);
+  link.target = "_blank";
+  link.rel = "noopener noreferrer";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 }
+
 
 function PropertyDetailsDialog({
   p,
