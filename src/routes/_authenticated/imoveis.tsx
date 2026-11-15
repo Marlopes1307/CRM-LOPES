@@ -1,19 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import {
-  Bath,
-  BedDouble,
-  Car,
-  Eye,
-  ImagePlus,
-  Maximize,
-  Pencil,
-  Plus,
-  Share2,
-  Trash2,
-  X,
-} from "lucide-react";
+import { Bath, BedDouble, Car, ImagePlus, Maximize, Pencil, Plus, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -281,208 +269,175 @@ function PropertyDetailsDialog({
 
         {photos.length > 0 ? (
           <div className="space-y-2">
-            <div className="aspect-video w-full overflow-hidden rounded-xl bg-muted">
-              {currentUrl ? (
-                <img src={currentUrl} alt={p.title} className="h-full w-full object-cover" />
-              ) : (
-                <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-                  Carregando foto...
-                </div>
-              )}
-            </div>
-            {photos.length > 1 && (
-              <div className="flex gap-2 overflow-x-auto pb-1">
-                {photos.map((path, idx) => (
-                  <button
-                    key={path}
-                    type="button"
-                    onClick={() => setActivePhoto(idx)}
-                    className={`h-16 w-24 shrink-0 overflow-hidden rounded-lg border-2 ${
-                      activePhoto === idx ? "border-primary" : "border-transparent opacity-70"
-                    }`}
-                  >
-                    {urls?.[path] && (
-                      <img src={urls[path]} alt="" className="h-full w-full object-cover" />
-                    )}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="flex h-40 items-center justify-center rounded-xl bg-muted text-sm text-muted-foreground">
-            Nenhuma foto cadastrada
-          </div>
-        )}
+{currentUrl ? (
 
-        <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border bg-muted/30 p-4">
-          <div>
-            <p className="text-xs text-muted-foreground">Valor</p>
-            <p className="text-xl font-bold text-primary">
-              {p.price != null ? brl(p.price) : "Sob consulta"}
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-            {p.bedrooms != null && (
-              <span className="flex items-center gap-1.5">
-                <BedDouble className="h-4 w-4" /> {p.bedrooms} quartos
-              </span>
-            )}
-            {p.bathrooms != null && (
-              <span className="flex items-center gap-1.5">
-                <Bath className="h-4 w-4" /> {p.bathrooms} banheiros
-              </span>
-            )}
-            {p.parking != null && (
-              <span className="flex items-center gap-1.5">
-                <Car className="h-4 w-4" /> {p.parking} vagas
-              </span>
-            )}
-            {p.area != null && (
-              <span className="flex items-center gap-1.5">
-                <Maximize className="h-4 w-4" /> {p.area} m²
-              </span>
-            )}
-          </div>
-        </div>
+) : (
 
-        {p.description && (
-          <div className="space-y-1">
-            <h4 className="text-sm font-semibold">Descrição do imóvel</h4>
-            <p className="whitespace-pre-line text-sm text-muted-foreground leading-relaxed">
-              {p.description}
-            </p>
-          </div>
-        )}
+Carregando foto...
 
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4">
-          <p className="text-xs text-muted-foreground">
-            {p.captador_name ? `Captado por: ${p.captador_name}` : ""}
-          </p>
-          <Button
-            type="button"
-            onClick={shareWhatsApp}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white"
-          >
-            Compartilhar no WhatsApp
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
+)}
+
+{photos.length > 1 && (
+
+{photos.map((path, idx) => (
+<button
+key={path}
+type="button"
+onClick={() => setActivePhoto(idx)}
+className={h-16 w-24 shrink-0 overflow-hidden rounded-lg border-2 ${ activePhoto === idx ? "border-primary" : "border-transparent opacity-70" }}
+>
+{urls?.[path] && (
+
+)}
+
+))}
+
+)}
+
+) : (
+
+Nenhuma foto cadastrada
+
+)}
+Valor
+
+{p.price != null ? brl(p.price) : "Sob consulta"}
+
+
+
+{p.bedrooms != null && (
+
+ {p.bedrooms} quartos
+
+)}
+{p.bathrooms != null && (
+
+ {p.bathrooms} banheiros
+
+)}
+{p.parking != null && (
+
+ {p.parking} vagas
+
+)}
+{p.area != null && (
+
+ {p.area} m²
+
+)}
+
+{p.description && (
+
+Descrição do imóvel
+
+{p.description}
+
+
+)}
+{p.captador_name ? Captado por: ${p.captador_name} : ""}
+
+
+Compartilhar no WhatsApp
+
+
+
+
+);
 }
-
 function PropertyCard({
 p,
 canEdit,
 onView,
 onEdit,
-  onDelete,
+onDelete,
 }: {
-  p: Property;
-  canEdit: boolean;
-  onView: () => void;
-  onEdit: () => void;
-  onDelete: () => void;
+p: Property;
+canEdit: boolean;
+onView: () => void;
+onEdit: () => void;
+onDelete: () => void;
 }) {
-  const { data: urls } = usePhotoUrls((p.photos ?? []).slice(0, 1));
-  const cover = p.photos?.[0] ? urls?.[p.photos[0]] : undefined;
-  const status = PROPERTY_STATUS.find((s) => s.id === p.status)?.label;
+const { data: urls } = usePhotoUrls((p.photos ?? []).slice(0, 1));
+const cover = p.photos?.[0] ? urls?.[p.photos[0]] : undefined;
+const status = PROPERTY_STATUS.find((s) => s.id === p.status)?.label;
+return (
 
-  return (
-    <div className="flex flex-col justify-between overflow-hidden rounded-xl border bg-card shadow-card">
-      <div onClick={onView} className="cursor-pointer">
-        <div className="relative aspect-[4/3] bg-muted">
-          {cover ? (
-            <img src={cover} alt={p.title} className="h-full w-full object-cover" />
-          ) : (
-            <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-              Sem foto
-            </div>
-          )}
-          <Badge className="absolute left-3 top-3">{status}</Badge>
-          {(p.photos?.length ?? 0) > 1 && (
-            <span className="absolute right-3 bottom-3 rounded bg-card px-2 py-0.5 text-xs">
-              {p.photos.length} fotos
-            </span>
-          )}
-        </div>
 
-        <div className="p-4">
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">
-            {p.kind} · {p.purpose}
-          </p>
-          <h3 className="mt-1 text-lg font-semibold leading-snug">{p.title}</h3>
-          <p className="text-sm text-muted-foreground">
-            {[p.address, p.city].filter(Boolean).join(", ")}
-          </p>
 
-          {p.price != null && (
-            <p className="mt-2 text-lg font-bold text-primary">{brl(p.price)}</p>
-          )}
+{cover ? (
 
-          <div className="mt-3 flex flex-wrap gap-4 text-xs text-muted-foreground">
-            {p.bedrooms != null && (
+) : (
 
+Sem foto
+
+)}
+{status}
+{(p.photos?.length ?? 0) > 1 && (
+
+{p.photos.length} fotos
+
+)}
+{p.kind} · {p.purpose}
+
+{p.title}
+
+{[p.address, p.city].filter(Boolean).join(", ")}
+{p.price != null && (
+{brl(p.price)}
+)}
+{p.bedrooms != null && (
 
 
 {p.bedrooms}
 
 )}
-            {p.bathrooms != null && (
-              <span className="flex items-center gap-1">
-                <Bath className="h-3.5 w-3.5" />
-                {p.bathrooms}
-              </span>
-            )}
-            {p.parking != null && (
-              <span className="flex items-center gap-1">
-                <Car className="h-3.5 w-3.5" />
-                {p.parking}
-              </span>
-            )}
-            {p.area != null && (
-              <span className="flex items-center gap-1">
-                <Maximize className="h-3.5 w-3.5" />
-                {p.area} m²
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
+{p.bathrooms != null && (
 
-      <div className="px-4 pb-4 space-y-2">
-        <Button type="button" variant="outline" size="sm" className="w-full" onClick={onView}>
-          Ver fotos e detalhes
-        </Button>
 
-        {canEdit ? (
-          <div className="flex items-center justify-between border-t pt-3">
-            <div className="text-xs text-muted-foreground">
-              {p.owner_name && <span>Prop.: {p.owner_name}</span>}
-              {p.owner_phone && <span> · {p.owner_phone}</span>}
-            </div>
-            <div className="flex gap-1">
-              <Button variant="ghost" size="icon" onClick={onEdit} aria-label="Editar">
-                <Pencil className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="icon" onClick={onDelete} aria-label="Excluir">
-                <Trash2 className="h-4 w-4 text-destructive" />
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <div className="border-t pt-3">
-            <p className="text-xs font-medium text-amber-600">
-              Captado por: {p.captador_name || "Outro corretor"}
-            </p>
-          </div>
-        )}
-      </div>
-    </div>
-  );
+{p.bathrooms}
+
+)}
+{p.parking != null && (
+
+
+{p.parking}
+
+)}
+{p.area != null && (
+
+
+{p.area} m²
+
+)}
+
+
+Ver fotos e detalhes
+{canEdit ? (
+
+
+{p.owner_name && Prop.: {p.owner_name}}
+{p.owner_phone &&  · {p.owner_phone}}
+
+
+
+
+
+
+
+
+
+
+) : (
+
+
+Captado por: {p.captador_name || "Outro corretor"}
+
+
+)}
+
+
+);
 }
-
 function PropertiesPage() {
 const queryClient = useQueryClient();
 const { data: me } = useCurrentUser();
@@ -553,15 +508,13 @@ variant={ownerFilter === "mine" ? "default" : "outline"}
 size="sm"
 onClick={() => setOwnerFilter("mine")}
 >
-            Meus imóveis
-          </Button>
-          <SelectField
-            value={statusFilter}
-            onChange={setStatusFilter}
-            options={[{ id: "all", label: "Todos os status" }, ...PROPERTY_STATUS]}
-          />
-        </div>
-      </div>
+Meus imóveis
+
+<SelectField
+value={statusFilter}
+onChange={setStatusFilter}
+options={[{ id: "all", label: "Todos os status" }, ...PROPERTY_STATUS]}
+/>
 
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Carregando imóveis...</p>
