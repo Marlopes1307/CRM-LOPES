@@ -207,8 +207,7 @@ function PropertyForm({ initial, onDone }: { initial: Property | null; onDone: (
     </form>
   );
 }
-function sharePropertyOnWhatsApp(p: Property) {
-  // Monta o link exclusivo deste imóvel usando o ID dele
+function getWhatsAppShareUrl(p: Property) {
   const shareUrl = `${window.location.origin}/imovel/${p.id}`;
 
   const lines = [
@@ -232,10 +231,18 @@ function sharePropertyOnWhatsApp(p: Property) {
     .filter(Boolean)
     .join("\n");
 
+  return {
+    lines,
+    whatsappUrl: "https://whatsapp.com" + encodeURIComponent(lines),
+  };
+}
+
+function sharePropertyOnWhatsApp(p: Property) {
+  const { lines, whatsappUrl } = getWhatsAppShareUrl(p);
+
   navigator.clipboard?.writeText(lines).catch(() => {});
   toast.success("Ficha copiada! Abrindo WhatsApp...");
 
-  const whatsappUrl = "https://whatsapp.com" + encodeURIComponent(lines);
   window.open(whatsappUrl, "_blank", "noopener,noreferrer");
 }
 
