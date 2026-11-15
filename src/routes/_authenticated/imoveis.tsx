@@ -429,54 +429,60 @@ onEdit,
 {p.bedrooms}
 
 )}
-{p.bathrooms != null && (
+            {p.bathrooms != null && (
+              <span className="flex items-center gap-1">
+                <Bath className="h-3.5 w-3.5" />
+                {p.bathrooms}
+              </span>
+            )}
+            {p.parking != null && (
+              <span className="flex items-center gap-1">
+                <Car className="h-3.5 w-3.5" />
+                {p.parking}
+              </span>
+            )}
+            {p.area != null && (
+              <span className="flex items-center gap-1">
+                <Maximize className="h-3.5 w-3.5" />
+                {p.area} m²
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
 
+      <div className="px-4 pb-4 space-y-2">
+        <Button type="button" variant="outline" size="sm" className="w-full" onClick={onView}>
+          Ver fotos e detalhes
+        </Button>
 
-{p.bathrooms}
-
-)}
-{p.parking != null && (
-
-
-{p.parking}
-
-)}
-{p.area != null && (
-
-
-{p.area} m²
-
-)}
-
-
-{canEdit ? (
-<>
-{p.owner_name && Prop.: {p.owner_name}}
-{p.owner_phone &&  · {p.owner_phone}}
-</>
-) : (
-
-Captado por: {p.captador_name || "Outro corretor"}
-
-)}
-Detalhes
-
-{canEdit && (
-<>
-
-
-
-
-
-
-</>
-)}
-
-
-
-
-);
+        {canEdit ? (
+          <div className="flex items-center justify-between border-t pt-3">
+            <div className="text-xs text-muted-foreground">
+              {p.owner_name && <span>Prop.: {p.owner_name}</span>}
+              {p.owner_phone && <span> · {p.owner_phone}</span>}
+            </div>
+            <div className="flex gap-1">
+              <Button variant="ghost" size="icon" onClick={onEdit} aria-label="Editar">
+                <Pencil className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="icon" onClick={onDelete} aria-label="Excluir">
+                <Trash2 className="h-4 w-4 text-destructive" />
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="border-t pt-3">
+            <p className="text-xs font-medium text-amber-600">
+              Captado por: {p.captador_name || "Outro corretor"}
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
+
 function PropertiesPage() {
 const queryClient = useQueryClient();
 const { data: me } = useCurrentUser();
