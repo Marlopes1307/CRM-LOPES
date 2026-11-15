@@ -230,9 +230,6 @@ function getWhatsAppShareUrl(p: Property) {
 
   return "https://whatsapp.com" + encodeURIComponent(lines);
 }
-
-
-
 function PropertyDetailsDialog({
             <Button
             asChild
