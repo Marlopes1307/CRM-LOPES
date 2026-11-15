@@ -207,7 +207,7 @@ function PropertyForm({ initial, onDone }: { initial: Property | null; onDone: (
     </form>
   );
 }
-function sharePropertyOnWhatsApp(p: Property) {
+function getWhatsAppShareUrl(p: Property) {
   const lines = [
     "*" + p.title + "*",
     p.kind.toUpperCase() + " - " + (p.purpose === "venda" ? "Venda" : "Aluguel"),
@@ -228,17 +228,9 @@ function sharePropertyOnWhatsApp(p: Property) {
     .filter(Boolean)
     .join("\n");
 
-  navigator.clipboard?.writeText(lines).catch(() => {});
-  toast.success("Ficha copiada! Abrindo WhatsApp...");
-
-  const link = document.createElement("a");
-  link.href = "https://whatsapp.com" + encodeURIComponent(lines);
-  link.target = "_blank";
-  link.rel = "noopener noreferrer";
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+  return "https://whatsapp.com" + encodeURIComponent(lines);
 }
+
 
 
 function PropertyDetailsDialog({
