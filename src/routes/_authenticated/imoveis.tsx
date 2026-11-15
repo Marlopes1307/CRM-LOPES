@@ -41,9 +41,7 @@ function useCurrentUser() {
     queryKey: ["current-user-profile"],
     staleTime: 10 * 60 * 1000,
     queryFn: async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
       const { data: profile } = await supabase
         .from("profiles")
@@ -94,9 +92,7 @@ function PropertyForm({ initial, onDone }: { initial: Property | null; onDone: (
       ? (Object.fromEntries(
           Object.keys(blank).map((k) => [
             k,
-            (initial as Record<string, unknown>)[k] == null
-              ? ""
-              : String((initial as Record<string, unknown>)[k]),
+            (initial as Record<string, unknown>)[k] == null ? "" : String((initial as Record<string, unknown>)[k]),
           ]),
         ) as typeof blank)
       : blank,
@@ -224,30 +220,6 @@ function PropertyForm({ initial, onDone }: { initial: Property | null; onDone: (
   );
 }
 
-function sharePropertyWhatsApp(p: Property) {
-  const lines = [
-    `*${p.title}*`,
-    `${p.kind.toUpperCase()} · ${p.purpose === "venda" ? "Venda" : "Aluguel"}`,
-    p.price != null ? `Valor: *${brl(p.price)}*` : null,
-    [p.address, p.city].filter(Boolean).length
-      ? `Localização: ${[p.address, p.city].filter(Boolean).join(", ")}`
-      : null,
-    [
-      p.bedrooms != null ? `${p.bedrooms} quartos` : null,
-      p.bathrooms != null ? `${p.bathrooms} banheiros` : null,
-      p.parking != null ? `${p.parking} vagas` : null,
-      p.area != null ? `${p.area} m²` : null,
-    ]
-      .filter(Boolean)
-      .join(" · "),
-    p.description ? `\n${p.description}` : null,
-  ]
-    .filter(Boolean)
-    .join("\n");
-
-  window.open(`https://wa.me{encodeURIComponent(lines)}`, "_blank");
-}
-
 function PropertyDetailsDialog({
   p,
   open,
@@ -263,9 +235,32 @@ function PropertyDetailsDialog({
   if (!p) return null;
 
   const photos = p.photos ?? [];
-  const safeIdx = activePhoto < photos.length ? activePhoto : 0;
-  const currentUrl = photos[safeIdx] ? urls?.[photos[safeIdx]] : undefined;
+  const currentUrl = photos[activePhoto] ? urls?.[photos[activePhoto]] : undefined;
   const status = PROPERTY_STATUS.find((s) => s.id === p.status)?.label;
+
+  function shareWhatsApp() {
+    const lines = [
+      `*${p!.title}*`,
+      `${p!.kind.toUpperCase()} · ${p!.purpose === "venda" ? "Venda" : "Aluguel"}`,
+      p!.price != null ? `Valor: *${brl(p!.price)}*` : null,
+      [p!.address, p!.city].filter(Boolean).length
+        ? `Localização: ${[p!.address, p!.city].filter(Boolean).join(", ")}`
+        : null,
+      [
+        p!.bedrooms != null ? `${p!.bedrooms} quartos` : null,
+        p!.bathrooms != null ? `${p!.bathrooms} banheiros` : null,
+        p!.parking != null ? `${p!.parking} vagas` : null,
+        p!.area != null ? `${p!.area} m²` : null,
+      ]
+        .filter(Boolean)
+        .join(" · "),
+      p!.description ? `\n${p!.description}` : null,
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    window.open(`https://wa.me{encodeURIComponent(lines)}`, "_blank");
+  }
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
@@ -298,7 +293,7 @@ Carregando foto...
 key={path}
 type="button"
 onClick={() => setActivePhoto(idx)}
-className={h-16 w-24 shrink-0 overflow-hidden rounded-lg border-2 ${ safeIdx === idx ? "border-primary" : "border-transparent opacity-70" }}
+className={h-16 w-24 shrink-0 overflow-hidden rounded-lg border-2 ${ activePhoto === idx ? "border-primary" : "border-transparent opacity-70" }}
 >
 {urls?.[path] && }
 
@@ -344,11 +339,7 @@ Descrição do imóvel
 )}
 {p.captador_name ? Captado por: ${p.captador_name} : ""}
 
-<Button
-type="button"
-onClick={() => sharePropertyWhatsApp(p)}
-className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
->
+
 
 Compartilhar no WhatsApp
 
@@ -421,37 +412,30 @@ Sem foto
 )}
 
 
-Ver detalhes
-
-<Button
-variant="outline"
-size="sm"
-className="gap-1.5 text-emerald-700 border-emerald-200 hover:bg-emerald-50"
-onClick={() => sharePropertyWhatsApp(p)}
->
-
-WhatsApp
-
 {canEdit ? (
-
-
+<>
 {p.owner_name && Prop.: {p.owner_name}}
 {p.owner_phone &&  · {p.owner_phone}}
-
-
-
-
-
-
-
-
-
-
+</>
 ) : (
 
 Captado por: {p.captador_name || "Outro corretor"}
 
 )}
+Detalhes
+
+{canEdit && (
+<>
+
+
+
+
+
+
+</>
+)}
+
+
 
 
 );
@@ -521,11 +505,11 @@ onClick={() => setOwnerFilter("all")}
 >
 Todos ({list.length})
 
-          <Button
-            variant={ownerFilter === "mine" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setOwnerFilter("mine")}
-          >
+<Button
+variant={ownerFilter === "mine" ? "default" : "outline"}
+size="sm"
+onClick={() => setOwnerFilter("mine")}
+>
             Meus imóveis
           </Button>
           <SelectField
