@@ -127,9 +127,7 @@ function PropertyForm({ initial, onDone }: { initial: Property | null; onDone: (
       onSubmit={(e) => {
         e.preventDefault();
         const v = emptyToNull(
-          Object.fromEntries(
-            Object.entries(f).map(([k, x]) => [k, NUM.includes(k) && x ? Number(x) : x]),
-          ),
+          Object.fromEntries(Object.entries(f).map(([k, x]) => [k, NUM.includes(k) && x ? Number(x) : x])),
         );
         save.mutate(
           { ...(initial ? { id: initial.id } : {}), ...v, title: f.title, photos } as never,
@@ -215,13 +213,7 @@ function PropertyForm({ initial, onDone }: { initial: Property | null; onDone: (
           <label className="flex h-20 w-28 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed text-xs text-muted-foreground hover:bg-muted">
             <ImagePlus className="h-5 w-5" />
             {uploading ? "Enviando..." : "Adicionar"}
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              className="hidden"
-              onChange={(e) => upload(e.target.files)}
-            />
+            <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => upload(e.target.files)} />
           </label>
         </div>
       </div>
@@ -271,19 +263,12 @@ function PropertyDetailsDialog({
   if (!p) return null;
 
   const photos = p.photos ?? [];
-  const currentUrl = photos[activePhoto] ? urls?.[photos[activePhoto]] : undefined;
+  const safeIdx = activePhoto < photos.length ? activePhoto : 0;
+  const currentUrl = photos[safeIdx] ? urls?.[photos[safeIdx]] : undefined;
   const status = PROPERTY_STATUS.find((s) => s.id === p.status)?.label;
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(v) => {
-        if (!v) {
-          setActivePhoto(0);
-          onClose();
-        }
-      }}
-    >
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center gap-2">
@@ -293,12 +278,11 @@ function PropertyDetailsDialog({
             </span>
           </div>
           <DialogTitle className="text-xl pt-1">{p.title}</DialogTitle>
-          <p className="text-sm text-muted-foreground">
-{[p.address, p.city].filter(Boolean).join(", ")}
+          <p className="text-sm text-muted-foreground">{[p.address, p.city].filter(Boolean).join(", ")}</p>
+        </DialogHeader>
 
-{photos.length > 0 ? (
-
-
+        {photos.length > 0 ? (
+          <div className="space-y-2">
 {currentUrl ? (
 
 ) : (
@@ -314,11 +298,9 @@ Carregando foto...
 key={path}
 type="button"
 onClick={() => setActivePhoto(idx)}
-className={h-16 w-24 shrink-0 overflow-hidden rounded-lg border-2 ${ activePhoto === idx ? "border-primary" : "border-transparent opacity-70" }}
+className={h-16 w-24 shrink-0 overflow-hidden rounded-lg border-2 ${ safeIdx === idx ? "border-primary" : "border-transparent opacity-70" }}
 >
-{urls?.[path] && (
-
-)}
+{urls?.[path] && }
 
 ))}
 
@@ -330,9 +312,7 @@ Nenhuma foto cadastrada
 
 )}
 Valor
-
 {p.price != null ? brl(p.price) : "Sob consulta"}
-
 
 
 {p.bedrooms != null && (
@@ -359,9 +339,7 @@ Valor
 {p.description && (
 
 Descrição do imóvel
-
 {p.description}
-
 
 )}
 {p.captador_name ? Captado por: ${p.captador_name} : ""}
@@ -369,7 +347,7 @@ Descrição do imóvel
 <Button
 type="button"
 onClick={() => sharePropertyWhatsApp(p)}
-className="bg-emerald-600 hover:bg-emerald-700 text-white"
+className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
 >
 
 Compartilhar no WhatsApp
@@ -402,9 +380,7 @@ return (
 {cover ? (
 
 ) : (
-
 Sem foto
-
 )}
 {status}
 {(p.photos?.length ?? 0) > 1 && (
@@ -416,7 +392,6 @@ Sem foto
 
 
 {p.title}
-
 
 {[p.address, p.city].filter(Boolean).join(", ")}
 {p.price != null && {brl(p.price)}}
@@ -446,16 +421,16 @@ Sem foto
 )}
 
 
-Ver fotos e detalhes
+Ver detalhes
 
 <Button
 variant="outline"
-size="icon"
+size="sm"
+className="gap-1.5 text-emerald-700 border-emerald-200 hover:bg-emerald-50"
 onClick={() => sharePropertyWhatsApp(p)}
-title="Compartilhar no WhatsApp"
-aria-label="Compartilhar no WhatsApp"
 >
 
+WhatsApp
 
 {canEdit ? (
 
@@ -546,11 +521,11 @@ onClick={() => setOwnerFilter("all")}
 >
 Todos ({list.length})
 
-<Button
-variant={ownerFilter === "mine" ? "default" : "outline"}
-size="sm"
-onClick={() => setOwnerFilter("mine")}
->
+          <Button
+            variant={ownerFilter === "mine" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setOwnerFilter("mine")}
+          >
             Meus imóveis
           </Button>
           <SelectField
@@ -578,9 +553,6 @@ onClick={() => setOwnerFilter("mine")}
                 canEdit={canEdit}
                 onView={() => setViewing(p)}
                 onEdit={() => {
-                  onView: () => void;
-                  onClick={onView}
-                  cursor-pointer
                   setEditing(p);
                   setOpen(true);
                 }}
