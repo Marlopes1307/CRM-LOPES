@@ -372,7 +372,7 @@ function PropertyCard({
   onDelete: () => void;
 }) {
   const { data: urls } = usePhotoUrls((p.photos ?? []).slice(0, 1));
-  const cover = p.photos?. ? urls?.[p.photos] : undefined;
+  const cover = p.photos?.[0] ? urls?.[p.photos[0]] : undefined;
   const status = PROPERTY_STATUS.find((s) => s.id === p.status)?.label;
 
   return (
