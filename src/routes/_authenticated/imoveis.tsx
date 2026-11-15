@@ -304,274 +304,274 @@ function PropertyDetailsDialog({
           </p>
         )}
 
-            Valor
+        Valor
 
-            {p.price != null ? brl(p.price) : "Sob consulta"}
+        {p.price != null ? brl(p.price) : "Sob consulta"}
 
 
 
-            {p.bedrooms != null && (
+        {p.bedrooms != null && (
 
-              { p.bedrooms } quartos
-
-)}
-            {p.bathrooms != null && (
-
-              { p.bathrooms } banheiros
+          { p.bedrooms } quartos
 
 )}
-            {p.parking != null && (
+        {p.bathrooms != null && (
 
-              { p.parking } vagas
-
-)}
-            {p.area != null && (
-
-              { p.area } m²
+          { p.bathrooms } banheiros
 
 )}
+        {p.parking != null && (
 
-            {p.description && (
+          { p.parking } vagas
 
-              Descrição do imóvel
+)}
+        {p.area != null && (
 
-            {p.description}
+          { p.area } m²
+
+)}
+
+        {p.description && (
+
+          Descrição do imóvel
+
+        {p.description}
 
 
 )}
-            {p.captador_name ? Captado por: ${p.captador_name} : ""}
+        {p.captador_name ? Captado por: ${p.captador_name} : ""}
 
 
-            Compartilhar no WhatsApp
+        Compartilhar no WhatsApp
 
 
 
 
-            );
+        );
 }
-            function PropertyCard({
-              p,
-              canEdit,
-              onView,
-              onEdit,
-              onDelete,
+        function PropertyCard({
+          p,
+          canEdit,
+          onView,
+          onEdit,
+          onDelete,
 }: {
-              p: Property;
-            canEdit: boolean;
+          p: Property;
+        canEdit: boolean;
 onView: () => void;
 onEdit: () => void;
 onDelete: () => void;
 }) {
 const {data: urls } = usePhotoUrls((p.photos ?? []).slice(0, 1));
-            const cover = p.photos?.[0] ? urls?.[p.photos[0]] : undefined;
+        const cover = p.photos?.[0] ? urls?.[p.photos[0]] : undefined;
 const status = PROPERTY_STATUS.find((s) => s.id === p.status)?.label;
-            return (
+        return (
 
 
 
-            {cover ? (
+        {cover ? (
 
-            ): (
+        ): (
 
-                Sem foto
-
-)}
-            {status}
-            {(p.photos?.length ?? 0) > 1 && (
-
-              { p.photos.length } fotos
+            Sem foto
 
 )}
-            {p.kind} · {p.purpose}
+        {status}
+        {(p.photos?.length ?? 0) > 1 && (
 
-            {p.title}
-
-            {[p.address, p.city].filter(Boolean).join(", ")}
-            {p.price != null && (
-              { brl(p.price)}
-)}
-            {p.bedrooms != null && (
-
-
-              { p.bedrooms }
-
-            )}
-            {p.bathrooms != null && (
-
-
-              { p.bathrooms }
-
-            )}
-            {p.parking != null && (
-
-
-              { p.parking }
-
-            )}
-            {p.area != null && (
-
-
-              { p.area } m²
+          { p.photos.length } fotos
 
 )}
+        {p.kind} · {p.purpose}
+
+        {p.title}
+
+        {[p.address, p.city].filter(Boolean).join(", ")}
+        {p.price != null && (
+          { brl(p.price)}
+)}
+        {p.bedrooms != null && (
 
 
-            Ver fotos e detalhes
-            {canEdit ? (
+          { p.bedrooms }
+
+        )}
+        {p.bathrooms != null && (
 
 
-              { p.owner_name && Prop.: { p.owner_name }}
-            {p.owner_phone &&  · {p.owner_phone}}
+          { p.bathrooms }
+
+        )}
+        {p.parking != null && (
 
 
+          { p.parking }
+
+        )}
+        {p.area != null && (
 
 
-
-
-
-
-
-
-            ) : (
-
-
-            Captado por: {p.captador_name || "Outro corretor"}
-
+          { p.area } m²
 
 )}
 
 
-            );
+        Ver fotos e detalhes
+        {canEdit ? (
+
+
+          { p.owner_name && Prop.: { p.owner_name }}
+        {p.owner_phone &&  · {p.owner_phone}}
+
+
+
+
+
+
+
+
+
+
+        ) : (
+
+
+        Captado por: {p.captador_name || "Outro corretor"}
+
+
+)}
+
+
+        );
 }
-            function PropertiesPage() {
+        function PropertiesPage() {
 const queryClient = useQueryClient();
-            const {data: me } = useCurrentUser();
-            const {remove} = useTable("properties");
-            const [open, setOpen] = useState(false);
-            const [editing, setEditing] = useState<Property | null>(null);
-            const [viewing, setViewing] = useState<Property | null>(null);
-            const [query, setQuery] = useState("");
-            const [statusFilter, setStatusFilter] = useState("all");
-            const [ownerFilter, setOwnerFilter] = useState<"all" | "mine">("all");
-            const {data: list = [], isLoading } = useQuery({
-              queryKey: ["shared_properties"],
+        const {data: me } = useCurrentUser();
+        const {remove} = useTable("properties");
+        const [open, setOpen] = useState(false);
+        const [editing, setEditing] = useState<Property | null>(null);
+        const [viewing, setViewing] = useState<Property | null>(null);
+        const [query, setQuery] = useState("");
+        const [statusFilter, setStatusFilter] = useState("all");
+        const [ownerFilter, setOwnerFilter] = useState<"all" | "mine">("all");
+        const {data: list = [], isLoading } = useQuery({
+          queryKey: ["shared_properties"],
 queryFn: async () => {
 const {data, error} = await supabase
-            .from("shared_properties" as any)
-            .select("*")
-            .order("created_at", {ascending: false });
-            if (error) throw error;
-            return (data ?? []) as Property[];
+        .from("shared_properties" as any)
+        .select("*")
+        .order("created_at", {ascending: false });
+        if (error) throw error;
+        return (data ?? []) as Property[];
 },
 });
 const filtered = useMemo(() => {
 return list.filter((p) => {
 if (ownerFilter === "mine" && p.user_id !== me?.id) return false;
-            if (statusFilter !== "all" && p.status !== statusFilter) return false;
-            if (query.trim()) {
+        if (statusFilter !== "all" && p.status !== statusFilter) return false;
+        if (query.trim()) {
 const q = query.toLowerCase();
-            const match = [p.title, p.address, p.city, p.kind, p.captador_name]
-            .filter(Boolean)
+        const match = [p.title, p.address, p.city, p.kind, p.captador_name]
+        .filter(Boolean)
 .some((v) => String(v).toLowerCase().includes(q));
-            if (!match) return false;
+        if (!match) return false;
 }
-            return true;
+        return true;
 });
 }, [list, ownerFilter, statusFilter, query, me?.id]);
-            return (
+        return (
 
-            <PageHeader
-              title="Imóveis"
-              subtitle="Carteira compartilhada da equipe"
-              action={
-                <Button
-                  onClick={() => {
-                    setEditing(null);
-                    setOpen(true);
-                  }}
-                >
+        <PageHeader
+          title="Imóveis"
+          subtitle="Carteira compartilhada da equipe"
+          action={
+            <Button
+              onClick={() => {
+                setEditing(null);
+                setOpen(true);
+              }}
+            >
 
-                  Novo imóvel
+              Novo imóvel
 
 }
 />
-                  <Input
-                    placeholder="Buscar por título, endereço, cidade ou captador..."
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    className="sm:max-w-sm"
+              <Input
+                placeholder="Buscar por título, endereço, cidade ou captador..."
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                className="sm:max-w-sm"
+              />
+              <Button
+                variant={ownerFilter === "all" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setOwnerFilter("all")}
+              >
+                Todos ({list.length})
+
+                <Button
+                  variant={ownerFilter === "mine" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setOwnerFilter("mine")}
+                >
+                  Meus imóveis
+
+                  <SelectField
+                    value={statusFilter}
+                    onChange={setStatusFilter}
+                    options={[{ id: "all", label: "Todos os status" }, ...PROPERTY_STATUS]}
                   />
-                  <Button
-                    variant={ownerFilter === "all" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setOwnerFilter("all")}
-                  >
-                    Todos ({list.length})
 
-                    <Button
-                      variant={ownerFilter === "mine" ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setOwnerFilter("mine")}
-                    >
-                      Meus imóveis
-
-                      <SelectField
-                        value={statusFilter}
-                        onChange={setStatusFilter}
-                        options={[{ id: "all", label: "Todos os status" }, ...PROPERTY_STATUS]}
-                      />
-
-                      {isLoading ? (
-                        <p className="text-sm text-muted-foreground">Carregando imóveis...</p>
-                      ) : filtered.length === 0 ? (
-                        <Empty>Nenhum imóvel encontrado.</Empty>
-                      ) : (
-                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                          {filtered.map((p) => {
-                            const canEdit = Boolean(
-                              me?.id && (me.id === p.user_id || ["gerente", "admin"].includes(me.role))
-                            );
-                            return (
-                              <PropertyCard
-                                key={p.id}
-                                p={p}
-                                canEdit={canEdit}
-                                onView={() => setViewing(p)}
-                                onEdit={() => {
-                                  setEditing(p);
-                                  setOpen(true);
-                                }}
-                                onDelete={() =>
-                                  remove.mutate(p.id, {
-                                    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["shared_properties"] }),
-                                  })
-                                }
-                              />
-                            );
-                          })}
-                        </div>
-                      )}
-
-                      <Dialog open={open} onOpenChange={setOpen}>
-                        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                          <DialogHeader>
-                            <DialogTitle>{editing ? "Editar imóvel" : "Novo imóvel"}</DialogTitle>
-                          </DialogHeader>
-                          <PropertyForm
-                            initial={editing}
-                            onDone={() => {
-                              setOpen(false);
-                              queryClient.invalidateQueries({ queryKey: ["shared_properties"] });
+                  {isLoading ? (
+                    <p className="text-sm text-muted-foreground">Carregando imóveis...</p>
+                  ) : filtered.length === 0 ? (
+                    <Empty>Nenhum imóvel encontrado.</Empty>
+                  ) : (
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                      {filtered.map((p) => {
+                        const canEdit = Boolean(
+                          me?.id && (me.id === p.user_id || ["gerente", "admin"].includes(me.role))
+                        );
+                        return (
+                          <PropertyCard
+                            key={p.id}
+                            p={p}
+                            canEdit={canEdit}
+                            onView={() => setViewing(p)}
+                            onEdit={() => {
+                              setEditing(p);
+                              setOpen(true);
                             }}
+                            onDelete={() =>
+                              remove.mutate(p.id, {
+                                onSuccess: () => queryClient.invalidateQueries({ queryKey: ["shared_properties"] }),
+                              })
+                            }
                           />
-                        </DialogContent>
-                      </Dialog>
-
-                      <PropertyDetailsDialog
-                        p={viewing}
-                        open={Boolean(viewing)}
-                        onClose={() => setViewing(null)}
-                      />
+                        );
+                      })}
                     </div>
-                    );
+                  )}
+
+                  <Dialog open={open} onOpenChange={setOpen}>
+                    <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle>{editing ? "Editar imóvel" : "Novo imóvel"}</DialogTitle>
+                      </DialogHeader>
+                      <PropertyForm
+                        initial={editing}
+                        onDone={() => {
+                          setOpen(false);
+                          queryClient.invalidateQueries({ queryKey: ["shared_properties"] });
+                        }}
+                      />
+                    </DialogContent>
+                  </Dialog>
+
+                  <PropertyDetailsDialog
+                    p={viewing}
+                    open={Boolean(viewing)}
+                    onClose={() => setViewing(null)}
+                  />
+                </div>
+                );
 }
