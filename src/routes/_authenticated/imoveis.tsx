@@ -208,8 +208,158 @@ function PropertyForm({ initial, onDone }: { initial: Property | null; onDone: (
     </form>
   );
 }
+function PropertyDetailsDialog({
+  p,
+  open,
+  onClose,
+}: {
+  p: Property | null;
+  open: boolean;
+  onClose: () => void;
+}) {
+  const { data: urls } = usePhotoUrls(p?.photos ?? []);
+  const [activePhoto, setActivePhoto] = useState(0);
 
+  if (!p) return null;
+
+  const photos = p.photos ?? [];
+  const currentUrl = photos[activePhoto] ? urls?.[photos[activePhoto]] : undefined;
+  const status = PROPERTY_STATUS.find((s) => s.id === p.status)?.label;
+
+  function shareWhatsApp() {
+    const lines = [
+      `*${p!.title}*`,
+      `${p!.kind.toUpperCase()} · ${p!.purpose === "venda" ? "Venda" : "Aluguel"}`,
+      p!.price != null ? `Valor: *${brl(p!.price)}*` : null,
+      [p!.address, p!.city].filter(Boolean).length
+        ? `Localização: ${[p!.address, p!.city].filter(Boolean).join(", ")}`
+        : null,
+      [
+        p!.bedrooms != null ? `${p!.bedrooms} quartos` : null,
+        p!.bathrooms != null ? `${p!.bathrooms} banheiros` : null,
+        p!.parking != null ? `${p!.parking} vagas` : null,
+        p!.area != null ? `${p!.area} m²` : null,
+      ]
+        .filter(Boolean)
+        .join(" · "),
+      p!.description ? `\n${p!.description}` : null,
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    window.open(`https://wa.me{encodeURIComponent(lines)}`, "_blank");
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <div className="flex items-center gap-2">
+            <Badge>{status}</Badge>
+            <span className="text-xs uppercase text-muted-foreground">
+              {p.kind} · {p.purpose}
+            </span>
+          </div>
+          <DialogTitle className="text-xl pt-1">{p.title}</DialogTitle>
+          <p className="text-sm text-muted-foreground">
+            {[p.address, p.city].filter(Boolean).join(", ")}
+          </p>
+        </DialogHeader>
+
+        {/* Galeria de fotos */}
+        {photos.length > 0 ? (
+          <div className="space-y-2">
+            <div className="aspect-video w-full overflow-hidden rounded-xl bg-muted">
+              {currentUrl ? (
+                <img src={currentUrl} alt={p.title} className="h-full w-full object-cover" />
+              ) : (
+                <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+                  Carregando foto...
+                </div>
+              )}
+            </div>
+            {photos.length > 1 && (
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                {photos.map((path, idx) => (
+                  <button
+                    key={path}
+                    type="button"
+                    onClick={() => setActivePhoto(idx)}
+                    className={`h-16 w-24 shrink-0 overflow-hidden rounded-lg border-2 ${
+                      activePhoto === idx ? "border-primary" : "border-transparent opacity-70"
+                    }`}
+                  >
+                    {urls?.[path] && (
+                      <img src={urls[path]} alt="" className="h-full w-full object-cover" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="flex h-40 items-center justify-center rounded-xl bg-muted text-sm text-muted-foreground">
+            Nenhuma foto cadastrada
+          </div>
+        )}
+
+        {/* Preço e características */}
+        <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border bg-muted/30 p-4">
+          <div>
+            <p className="text-xs text-muted-foreground">Valor</p>
+            <p className="text-xl font-bold text-primary">
+              {p.price != null ? brl(p.price) : "Sob consulta"}
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+            {p.bedrooms != null && (
+              <span className="flex items-center gap-1.5">
+                <BedDouble className="h-4 w-4" /> {p.bedrooms} quartos
+              </span>
+            )}
+            {p.bathrooms != null && (
+              <span className="flex items-center gap-1.5">
+                <Bath className="h-4 w-4" /> {p.bathrooms} banheiros
+              </span>
+            )}
+            {p.parking != null && (
+              <span className="flex items-center gap-1.5">
+                <Car className="h-4 w-4" /> {p.parking} vagas
+              </span>
+            )}
+            {p.area != null && (
+              <span className="flex items-center gap-1.5">
+                <Maximize className="h-4 w-4" /> {p.area} m²
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Descrição completa */}
+        {p.description && (
+          <div className="space-y-1">
+            <h4 className="text-sm font-semibold">Descrição do imóvel</h4>
+            <p className="whitespace-pre-line text-sm text-muted-foreground leading-relaxed">
+              {p.description}
+            </p>
+          </div>
+        )}
+
+        {/* Rodapé com botão de compartilhar no WhatsApp */}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4">
+          <p className="text-xs text-muted-foreground">
+            {p.captador_name ? `Captado por: ${p.captador_name}` : ""}
+          </p>
+          <Button type="button" onClick={shareWhatsApp} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+            Compartilhar no WhatsApp
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
 function PropertyCard({
+  onClick={() => setViewing(p)}
   p,
   canEdit,
   onEdit,
@@ -308,6 +458,7 @@ function PropertyCard({
 }
 
 function PropertiesPage() {
+  const [viewing, setViewing] = useState<Property | null>(null);
   const queryClient = useQueryClient();
   const { data: me } = useCurrentUser();
   const { remove } = useTable("properties");
@@ -392,7 +543,11 @@ function PropertiesPage() {
           />
         </div>
       </div>
-
+      <PropertyDetailsDialog
+  p={viewing}
+  open={Boolean(viewing)}
+  onClose={() => setViewing(null)}
+/>
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Carregando imóveis...</p>
       ) : filtered.length === 0 ? (
