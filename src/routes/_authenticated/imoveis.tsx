@@ -819,29 +819,6 @@ function PropertyCard({
   );
 }
 
-function usePhotoUrls(paths: string[]) {
-  return useQuery({
-    queryKey: ["property-photos", paths],
-    enabled: paths.length > 0,
-    staleTime: 1000 * 60 * 30,
-    queryFn: async () => {
-      const map: Record<string, string> = {};
-      await Promise.all(
-        paths.map(async (path) => {
-          if (path.startsWith("http")) {
-            map[path] = path;
-            return;
-          }
-          const { data } = await supabase.storage
-            .from("property-photos")
-            .createSignedUrl(path, 3600);
-          if (data?.signedUrl) map[path] = data.signedUrl;
-        }),
-      );
-      return map;
-    },
-  });
-}
 
 function PropertyForm({
   initial,
