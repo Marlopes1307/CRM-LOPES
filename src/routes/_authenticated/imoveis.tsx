@@ -278,9 +278,15 @@ function PropertyForm({ initial, onDone }: { initial: Property | null; onDone: (
             {uploading ? "Enviando..." : "Adicionar"}
             <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => upload(e.target.files)} />
           </label>
-     <Button className="col-span-2 md:col-span-4" disabled={save.isPending || uploading}>
-     </Button>
-Salvar imóvel
+           <Button className="col-span-2" disabled={save.isPending || uploading}>
+        {save.isPending ? "Salvando..." : "Salvar imóvel"}
+      </Button>
+    </form>
+  );
+}
+
+async function generatePropertyPDF(p: Property, photoUrls: Record<string, string> = {}) {
+
 async function generatePropertyPDF(p: Property, photoUrls: Record<string, string> = {}) {
 toast.info("Preparando ficha em PDF...");
 let corretorNome = p.captador_name || "Mota Negócios Imobiliários";
