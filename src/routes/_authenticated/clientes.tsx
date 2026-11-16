@@ -501,16 +501,14 @@ Até {brl(Number(c.budget))}
 
 
 
-
-<Dialog open={editing !== undefined} onOpenChange={(o) => !o && setEditing(undefined)}>
-
-
-{editing ? "Editar cliente" : "Novo cliente"}
-
-<ClientForm initial={editing} onDone={() => setEditing(undefined)} />
-
-
-</>
-);
+      <Dialog open={editing !== undefined} onOpenChange={(o) => !o && setEditing(undefined)}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editing ? "Editar cliente" : "Novo cliente"}</DialogTitle>
+          </DialogHeader>
+          <ClientForm initial={editing} onDone={() => setEditing(undefined)} />
+        </DialogContent>
+      </Dialog>
+    </>
+  );
 }
-
