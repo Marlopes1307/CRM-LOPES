@@ -231,11 +231,6 @@ function buildPropertyShareText(p: Property) {
     .filter(Boolean)
     .join("\n");
 }
-function getWhatsAppShareUrl(p: Property): string {
-  const lines = buildPropertyShareText(p);
-  return "https://whatsapp.com" + encodeURIComponent(lines);
-}
-
 async function generatePropertyPDF(p: Property, photoUrls: Record<string, string> = {}) {
   toast.info("Preparando ficha em PDF...");
 
@@ -371,11 +366,6 @@ async function generatePropertyPDF(p: Property, photoUrls: Record<string, string
   printWindow.document.write(html);
   printWindow.document.close();
 }
-// Mantém compatibilidade caso algum outro botão ainda chame os nomes antigos
-function sharePropertyOnWhatsApp(p: Property, urls?: Record<string, string>) {
-  generatePropertyPDF(p, urls);
-}
-
 function PropertyDetailsDialog({
   p,
   open,
