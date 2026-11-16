@@ -236,15 +236,147 @@ function getWhatsAppShareUrl(p: Property): string {
   return "https://whatsapp.com" + encodeURIComponent(lines);
 }
 
-function sharePropertyOnWhatsApp(p: Property) {
-  const lines = buildPropertyShareText(p);
-  const whatsappUrl = getWhatsAppShareUrl(p);
+async function generatePropertyPDF(p: Property, photoUrls: Record<string, string> = {}) {
+  toast.info("Preparando ficha em PDF...");
 
-  navigator.clipboard?.writeText(lines).catch(() => {});
-  toast.success("Ficha copiada! Abrindo WhatsApp...");
+  // Busca o nome e telefone/WhatsApp do corretor logado na tabela profiles
+  let corretorNome = p.captador_name || "Mota Negócios Imobiliários";
+  let corretorTelefone = "";
 
-  window.open(whatsappUrl, "_blank", "noopener,noreferrer");
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+
+      if (profile) {
+        corretorNome = profile.full_name || profile.name || corretorNome;
+        corretorTelefone = profile.phone || profile.whatsapp || profile.telefone || "";
+      }
+    }
+  } catch (err) {
+    console.error("Erro ao buscar perfil do corretor:", err);
+  }
+
+  const photos = (p.photos ?? [])
+    .map((path) => photoUrls[path])
+    .filter(Boolean);
+
+  const formattedPrice = p.price != null ? brl(p.price) : "Sob consulta";
+  const location = [p.address, p.city].filter(Boolean).join(", ");
+
+  const printWindow = window.open("", "_blank");
+  if (!printWindow) {
+    toast.error("Por favor, permita pop-ups no navegador para gerar o PDF.");
+    return;
+  }
+
+  const html = `
+    <!DOCTYPE html>
+    <html lang="pt-BR">
+    <head>
+      <meta charset="UTF-8" />
+      <title>${p.title} - Ficha do Imóvel</title>
+      <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+        body { color: #1e293b; background: #fff; padding: 32px; max-width: 800px; margin: 0 auto; }
+        .header { border-bottom: 2px solid #0f172a; padding-bottom: 16px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: flex-end; }
+        .brand { font-size: 14px; font-weight: 700; color: #059669; text-transform: uppercase; letter-spacing: 1px; }
+        .badge { display: inline-block; background: #f1f5f9; color: #334155; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 6px; text-transform: uppercase; margin-bottom: 8px; }
+        h1 { font-size: 24px; color: #0f172a; margin-bottom: 6px; }
+        .location { font-size: 14px; color: #64748b; }
+        .price-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px 20px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; }
+        .price-label { font-size: 12px; color: #64748b; text-transform: uppercase; }
+        .price-value { font-size: 24px; font-weight: 800; color: #059669; }
+        .specs { display: flex; gap: 16px; font-size: 13px; font-weight: 600; color: #334155; }
+        .main-photo { width: 100%; height: 340px; object-fit: cover; border-radius: 12px; margin-bottom: 12px; }
+        .photo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 24px; }
+        .photo-grid img { width: 100%; height: 140px; object-fit: cover; border-radius: 8px; }
+        .section-title { font-size: 15px; font-weight: 700; color: #0f172a; margin-bottom: 8px; border-left: 3px solid #059669; padding-left: 8px; }
+        .description { font-size: 14px; line-height: 1.6; color: #475569; white-space: pre-line; margin-bottom: 32px; }
+        .footer { border-top: 2px solid #e2e8f0; padding-top: 16px; margin-top: 24px; display: flex; justify-content: space-between; align-items: center; }
+        .broker-info { font-size: 13px; color: #1e293b; }
+        .broker-phone { font-size: 14px; font-weight: 700; color: #059669; margin-top: 2px; }
+        .doc-date { font-size: 11px; color: #94a3b8; }
+        @media print {
+          body { padding: 0; }
+          @page { margin: 1.5cm; }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <div>
+          <div class="brand">Mota Negócios Imobiliários</div>
+          <div style="margin-top: 8px;">
+            <span class="badge">${p.kind} · ${p.purpose === "venda" ? "Venda" : "Aluguel"}</span>
+            <h1>${p.title}</h1>
+            ${location ? `<p class="location">📍 ${location}</p>` : ""}
+          </div>
+        </div>
+      </div>
+
+      <div class="price-box">
+        <div>
+          <div class="price-label">Valor do Investimento</div>
+          <div class="price-value">${formattedPrice}</div>
+        </div>
+        <div class="specs">
+          ${p.bedrooms != null ? `<span>🛏️ ${p.bedrooms} Quartos</span>` : ""}
+          ${p.bathrooms != null ? `<span>🚿 ${p.bathrooms} Banheiros</span>` : ""}
+          ${p.parking != null ? `<span>🚗 ${p.parking} Vagas</span>` : ""}
+          ${p.area != null ? `<span>📐 ${p.area} m²</span>` : ""}
+        </div>
+      </div>
+
+      ${photos.length > 0 ? `
+        <img src="${photos[0]}" class="main-photo" alt="Foto principal" />
+        ${photos.length > 1 ? `
+          <div class="photo-grid">
+            ${photos.slice(1, 7).map((url) => `<img src="${url}" alt="Foto do imóvel" />`).join("")}
+          </div>
+        ` : ""}
+      ` : ""}
+
+      ${p.description ? `
+        <div>
+          <div class="section-title">Descrição do Imóvel</div>
+          <p class="description">${p.description}</p>
+        </div>
+      ` : ""}
+
+      <div class="footer">
+        <div class="broker-info">
+          <div>Atendimento: <strong>${corretorNome}</strong></div>
+          ${corretorTelefone ? `<div class="broker-phone">📱 WhatsApp / Tel: ${corretorTelefone}</div>` : ""}
+        </div>
+        <div class="doc-date">Ficha gerada em ${new Date().toLocaleDateString("pt-BR")}</div>
+      </div>
+
+      <script>
+        window.onload = function() {
+          setTimeout(() => {
+            window.print();
+          }, 700);
+        };
+      </script>
+    </body>
+    </html>
+  `;
+
+  printWindow.document.open();
+  printWindow.document.write(html);
+  printWindow.document.close();
 }
+// Mantém compatibilidade caso algum outro botão ainda chame os nomes antigos
+function getWhatsAppShareUrl(p: Property): string { return "#"; }
+function sharePropertyOnWhatsApp(p: Property, urls?: Record<string, string>) {
+  generatePropertyPDF(p, urls);
+}
+
 function PropertyDetailsDialog({
   p,
   open,
@@ -267,12 +399,19 @@ function PropertyDetailsDialog({
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <div className="flex items-center gap-2">
-            <Badge>{status}</Badge>
-            <span className="text-xs uppercase text-muted-foreground">
-              {p.kind} · {p.purpose}
-            </span>
-          </div>
+             <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4">
+          <p className="text-xs text-muted-foreground">
+            {p.captador_name ? `Captado por: ${p.captador_name}` : ""}
+          </p>
+          <Button
+            type="button"
+            onClick={() => generatePropertyPDF(p, urls ?? {})}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white"
+          >
+            Gerar Ficha em PDF
+          </Button>
+        </div>
+
           <DialogTitle className="text-xl pt-1">{p.title}</DialogTitle>
           <p className="text-sm text-muted-foreground">
             {[p.address, p.city].filter(Boolean).join(", ")}
