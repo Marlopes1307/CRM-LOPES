@@ -237,6 +237,8 @@ async function generatePropertyPDF(p: Property, photoUrls: Record<string, string
   // Busca o nome e telefone/WhatsApp do corretor logado na tabela profiles
   let corretorNome = p.captador_name || "Mota Negócios Imobiliários";
   let corretorTelefone = "";
+  let corretorEmail = "";
+  let corretorCreci = "";
 
   try {
     const { data: { user } } = await supabase.auth.getUser();
@@ -250,11 +252,14 @@ async function generatePropertyPDF(p: Property, photoUrls: Record<string, string
       if (profile) {
         corretorNome = profile.full_name || profile.name || corretorNome;
         corretorTelefone = profile.phone || profile.whatsapp || profile.telefone || "";
+        corretorEmail = profile.email || user.email || "";
+        corretorCreci = profile.creci || "";
       }
     }
   } catch (err) {
     console.error("Erro ao buscar perfil do corretor:", err);
   }
+
 
   const photos = (p.photos ?? [])
     .map((path) => photoUrls[path])
