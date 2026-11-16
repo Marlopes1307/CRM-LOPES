@@ -399,9 +399,6 @@ function PropertyDetailsDialog({
           >
             Gerar Ficha em PDF
           </Button>
-               function getWhatsAppShareUrl(_p: Property) {
-  return "#";
-}
         </div>
 
           <DialogTitle className="text-xl pt-1">{p.title}</DialogTitle>
