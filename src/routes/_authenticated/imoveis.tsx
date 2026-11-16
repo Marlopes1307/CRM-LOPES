@@ -286,8 +286,6 @@ function PropertyForm({ initial, onDone }: { initial: Property | null; onDone: (
 }
 
 async function generatePropertyPDF(p: Property, photoUrls: Record<string, string> = {}) {
-
-async function generatePropertyPDF(p: Property, photoUrls: Record<string, string> = {}) {
 toast.info("Preparando ficha em PDF...");
 let corretorNome = p.captador_name || "Mota Negócios Imobiliários";
 let corretorTelefone = "";
