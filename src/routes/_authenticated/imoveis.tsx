@@ -279,8 +279,7 @@ function PropertyForm({ initial, onDone }: { initial: Property | null; onDone: (
             <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => upload(e.target.files)} />
           </label>
         </div>
-      </div>
-<Button className="col-span-2 md:col-span-4" disabled={save.isPending || uploading}>
+    <Button className="col-span-2 md:col-span-4" disabled={save.isPending || uploading}>
 </form>
 Salvar imóvel
 
