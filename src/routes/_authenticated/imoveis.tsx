@@ -417,7 +417,60 @@ function PropertyDetailsDialog({
   const { rows: clients } = useTable("clients");
   const [activePhoto, setActivePhoto] = useState(0);
 
-  const matches = useMemo(() => {
+    const matchingClients = useMemo(() => {
+    if (!p) return [];
+
+    // Remove acentos e deixa tudo em minúsculo para comparar sem falhas
+    const normalize = (str: string) =>
+      str
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase();
+
+    const propPrice = p.price != null ? Number(p.price) : null;
+
+    // Monta um texto completo do imóvel incluindo quartos, vagas e sinônimos
+    const extraTags = [
+      p.kind === "apartamento" ? "ap apto apartamento" : p.kind,
+      p.bedrooms != null ? `${p.bedrooms} quarto quartos qts` : "",
+      p.parking != null ? `${p.parking} vaga vagas` : "",
+    ];
+
+    const propText = normalize(
+      [p.title, p.kind, p.purpose, p.address, p.city, p.description, ...extraTags]
+        .filter(Boolean)
+        .join(" "),
+    );
+
+    const stopWords = new Set(["com", "para", "que", "dos", "das", "por", "uma", "uns", "ate", "em", "na", "no", "de", "do", "da"]);
+
+    return allClients
+      .filter((c) => {
+        const isDeferred = (c as { status?: string }).status === "adiado";
+        if (c.stage === "fechado" || c.stage === "perdido" || isDeferred) return false;
+
+        // Separa aluguel de compra
+        if (c.type === "locatario" && p.purpose !== "aluguel") return false;
+        if ((c.type === "comprador" || c.type === "investidor") && p.purpose === "aluguel") return false;
+
+        // Orçamento com margem de 20% para negociação
+        const budget = c.budget != null ? Number(c.budget) : null;
+        const budgetOk = propPrice == null || budget == null || budget * 1.2 >= propPrice;
+        if (!budgetOk) return false;
+
+        // Verifica palavras-chave do interesse (incluindo números como "2" ou "3" quartos)
+        const keywords = normalize(c.interest ?? "")
+          .split(/[\s,.;/-]+/)
+          .filter((w) => (w.length >= 2 && !stopWords.has(w)));
+
+        if (keywords.length === 0) return true;
+
+        // Basta que pelo menos uma característica relevante do interesse bata com o imóvel
+        return keywords.some((kw) => propText.includes(kw));
+      })
+      .slice(0, 8);
+  }, [allClients, p]);
+
     if (!p) return [];
     return getMatchingClients(p, clients as ClientMatchItem[]);
   }, [p, clients]);
