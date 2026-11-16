@@ -680,6 +680,7 @@ onClick={() => setOwnerFilter("mine")}
             options={[{ id: "all", label: "Todos os status" }, ...PROPERTY_STATUS]}
           />
         </div>
+</button>
       
       {isLoading ? (
         <p className="py-12 text-center text-sm text-muted-foreground">Carregando imóveis...</p>
