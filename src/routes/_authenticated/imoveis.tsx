@@ -156,7 +156,7 @@ function PropertyForm({ initial, onDone }: { initial: Property | null; onDone: (
     setUploading(false);
   }
 
-  return (
+     return (
     <form
       className="grid grid-cols-2 md:grid-cols-4 gap-3"
       onSubmit={(e) => {
@@ -226,27 +226,20 @@ function PropertyForm({ initial, onDone }: { initial: Property | null; onDone: (
       <Field label="Telefone do proprietário" className="col-span-2">
         <Input value={f.owner_phone} onChange={(e) => set("owner_phone")(e.target.value)} />
       </Field>
-                <Field label="Descrição" className="col-span-2">
+      <Field label="Descrição" className="col-span-2 md:col-span-4">
         <Textarea rows={4} value={f.description} onChange={(e) => set("description")(e.target.value)} />
       </Field>
 
-      <div className="col-span-2 space-y-2">
-        <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm hover:bg-muted">
-          <ImagePlus className="h-4 w-4" />
-          <span>{uploading ? "Enviando fotos..." : "Adicionar fotos"}</span>
-          <input
-            type="file"
-            accept="image/*"
-            multiple
-            disabled={uploading}
-            onChange={handleUpload}
-            className="hidden"
-          />
+      <div className="col-span-2 md:col-span-4 space-y-2">
+        <label className="flex h-20 w-28 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed text-xs text-muted-foreground hover:bg-muted">
+          <ImagePlus className="h-5 w-5" />
+          {uploading ? "Enviando..." : "Adicionar"}
+          <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => upload(e.target.files)} />
         </label>
 
-        {f.photos.length > 0 && (
+        {photos.length > 0 && (
           <div className="flex flex-wrap gap-2">
-            {f.photos.map((path, idx) => (
+            {photos.map((path, idx) => (
               <span
                 key={path}
                 className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-1 text-xs"
@@ -254,12 +247,7 @@ function PropertyForm({ initial, onDone }: { initial: Property | null; onDone: (
                 Foto {idx + 1}
                 <button
                   type="button"
-                  onClick={() =>
-                    setF((prev) => ({
-                      ...prev,
-                      photos: prev.photos.filter((_, i) => i !== idx),
-                    }))
-                  }
+                  onClick={() => setPhotos((prev) => prev.filter((_, i) => i !== idx))}
                 >
                   <X className="h-3 w-3" />
                 </button>
@@ -269,16 +257,7 @@ function PropertyForm({ initial, onDone }: { initial: Property | null; onDone: (
         )}
       </div>
 
-      <Button className="col-span-2" disabled={save.isPending || uploading}>
-        {save.isPending ? "Salvando..." : "Salvar imóvel"}
-      </Button>
-
-          <label className="flex h-20 w-28 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed text-xs text-muted-foreground hover:bg-muted">
-            <ImagePlus className="h-5 w-5" />
-            {uploading ? "Enviando..." : "Adicionar"}
-            <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => upload(e.target.files)} />
-          </label>
-           <Button className="col-span-2" disabled={save.isPending || uploading}>
+      <Button className="col-span-2 md:col-span-4" disabled={save.isPending || uploading}>
         {save.isPending ? "Salvando..." : "Salvar imóvel"}
       </Button>
     </form>
@@ -286,76 +265,145 @@ function PropertyForm({ initial, onDone }: { initial: Property | null; onDone: (
 }
 
 async function generatePropertyPDF(p: Property, photoUrls: Record<string, string> = {}) {
-toast.info("Preparando ficha em PDF...");
-let corretorNome = p.captador_name || "Mota Negócios Imobiliários";
-let corretorTelefone = "";
-let corretorEmail = "";
-let corretorCreci = "";
-try {
-const { data: { user } } = await supabase.auth.getUser();
-if (user) {
-const coverUrl = p.photos?. ? urls?.[p.photos] : undefined;
-const { data: profile } = await supabase
-.from("profiles")
-.select("*")
-.eq("id", user.id)
-.single();
-if (profile) {
-corretorNome = profile.full_name || profile.name || corretorNome;
-corretorTelefone = profile.phone || profile.whatsapp || profile.telefone || "";
-corretorEmail = profile.email || user.email || "";
-corretorCreci = profile.creci || "";
+  toast.info("Preparando ficha em PDF...");
+
+  let corretorNome = p.captador_name || "Mota Negócios Imobiliários";
+  let corretorTelefone = "";
+  let corretorEmail = "";
+  let corretorCreci = "";
+
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+
+      if (profile) {
+        corretorNome = profile.full_name || profile.name || corretorNome;
+        corretorTelefone = profile.phone || profile.whatsapp || profile.telefone || "";
+        corretorEmail = profile.email || user.email || "";
+        corretorCreci = profile.creci || "";
+      }
+    }
+  } catch (err) {
+    console.error("Erro ao buscar perfil do corretor:", err);
+  }
+
+  const photos = (p.photos ?? [])
+    .map((path) => photoUrls[path])
+    .filter(Boolean);
+
+  const formattedPrice = p.price != null ? brl(p.price) : "Sob consulta";
+  const location = [p.address, p.city].filter(Boolean).join(", ");
+
+  const printWindow = window.open("", "_blank");
+  if (!printWindow) {
+    toast.error("Por favor, permita pop-ups no navegador para gerar o PDF.");
+    return;
+  }
+
+  const html = `
+    <!DOCTYPE html>
+    <html lang="pt-BR">
+    <head>
+      <meta charset="UTF-8" />
+      <title>${p.title} - Ficha do Imóvel</title>
+      <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+        body { color: #1e293b; background: #fff; padding: 32px; max-width: 800px; margin: 0 auto; }
+        .header { border-bottom: 2px solid #0f172a; padding-bottom: 16px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: flex-end; }
+        .brand { font-size: 14px; font-weight: 700; color: #059669; text-transform: uppercase; letter-spacing: 1px; }
+        .badge { display: inline-block; background: #f1f5f9; color: #334155; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 6px; text-transform: uppercase; margin-bottom: 8px; }
+        h1 { font-size: 24px; color: #0f172a; margin-bottom: 6px; }
+        .location { font-size: 14px; color: #64748b; }
+        .price-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px 20px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; }
+        .price-label { font-size: 12px; color: #64748b; text-transform: uppercase; }
+        .price-value { font-size: 24px; font-weight: 800; color: #059669; }
+        .specs { display: flex; gap: 16px; font-size: 13px; font-weight: 600; color: #334155; }
+        .main-photo { width: 100%; height: 340px; object-fit: cover; border-radius: 12px; margin-bottom: 12px; }
+        .photo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 24px; }
+        .photo-grid img { width: 100%; height: 140px; object-fit: cover; border-radius: 8px; }
+        .section-title { font-size: 15px; font-weight: 700; color: #0f172a; margin-bottom: 8px; border-left: 3px solid #059669; padding-left: 8px; }
+        .description { font-size: 14px; line-height: 1.6; color: #475569; white-space: pre-line; margin-bottom: 32px; }
+        .footer { border-top: 2px solid #e2e8f0; padding-top: 16px; margin-top: 24px; display: flex; justify-content: space-between; align-items: center; }
+        .broker-info { font-size: 13px; color: #1e293b; }
+        .broker-phone { font-size: 14px; font-weight: 700; color: #059669; margin-top: 2px; }
+        .doc-date { font-size: 11px; color: #94a3b8; }
+        @media print {
+          body { padding: 0; }
+          @page { margin: 1.5cm; }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <div>
+          <div class="brand">Mota Negócios Imobiliários</div>
+          <div style="margin-top: 8px;">
+            <span class="badge">${p.kind} · ${p.purpose === "venda" ? "Venda" : "Aluguel"}</span>
+            <h1>${p.title}</h1>
+            ${location ? `<p class="location">📍 ${location}</p>` : ""}
+          </div>
+        </div>
+      </div>
+
+      <div class="price-box">
+        <div>
+          <div class="price-label">Valor do Investimento</div>
+          <div class="price-value">${formattedPrice}</div>
+        </div>
+        <div class="specs">
+          ${p.bedrooms != null ? `<span>🛏️ ${p.bedrooms} Quartos</span>` : ""}
+          ${p.bathrooms != null ? `<span>🚿 ${p.bathrooms} Banheiros</span>` : ""}
+          ${p.parking != null ? `<span>🚗 ${p.parking} Vagas</span>` : ""}
+          ${p.area != null ? `<span>📐 ${p.area} m²</span>` : ""}
+        </div>
+      </div>
+
+      ${photos.length > 0 ? `
+        <img src="${photos.at(0)}" class="main-photo" alt="Foto principal" />
+        ${photos.length > 1 ? `
+          <div class="photo-grid">
+            ${photos.slice(1, 7).map((url) => `<img src="${url}" alt="Foto do imóvel" />`).join("")}
+          </div>
+        ` : ""}
+      ` : ""}
+
+      ${p.description ? `
+        <div>
+          <div class="section-title">Descrição do Imóvel</div>
+          <p class="description">${p.description}</p>
+        </div>
+      ` : ""}
+
+      <div class="footer">
+        <div class="broker-info">
+          <div>Atendimento: <strong>${corretorNome}</strong>${corretorCreci ? ` — ${corretorCreci.toUpperCase().includes("CRECI") ? corretorCreci : `CRECI: ${corretorCreci}`}` : ""}</div>
+          ${corretorTelefone ? `<div class="broker-phone">📱 WhatsApp / Tel: ${corretorTelefone}</div>` : ""}
+          ${corretorEmail ? `<div style="font-size: 12px; color: #475569; margin-top: 2px;">✉️ ${corretorEmail}</div>` : ""}
+        </div>
+        <div class="doc-date">Ficha gerada em ${new Date().toLocaleDateString("pt-BR")}</div>
+      </div>
+
+      <script>
+        window.onload = function() {
+          setTimeout(() => {
+            window.print();
+          }, 700);
+        };
+      </script>
+    </body>
+    </html>
+  `;
+
+  printWindow.document.open();
+  printWindow.document.write(html);
+  printWindow.document.close();
 }
-}
-} catch (err) {
-console.error("Erro ao buscar perfil do corretor:", err);
-}
-const photos = (p.photos ?? [])
-.map((path) => photoUrls[path])
-.filter(Boolean);
-const formattedPrice = p.price != null ? brl(p.price) : "Sob consulta";
-const location = [p.address, p.city].filter(Boolean).join(", ");
-const printWindow = window.open("", "_blank");
-if (!printWindow) {
-toast.error("Por favor, permita pop-ups no navegador para gerar o PDF.");
-return;
-}
-const html = <!DOCTYPE html> <html lang="pt-BR"> <head> <meta charset="UTF-8" /> <title>${p.title} - Ficha do Imóvel</title> <style> * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; } body { color: #1e293b; background: #fff; padding: 32px; max-width: 800px; margin: 0 auto; } .header { border-bottom: 2px solid #0f172a; padding-bottom: 16px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: flex-end; } .brand { font-size: 14px; font-weight: 700; color: #059669; text-transform: uppercase; letter-spacing: 1px; } .badge { display: inline-block; background: #f1f5f9; color: #334155; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 6px; text-transform: uppercase; margin-bottom: 8px; } h1 { font-size: 24px; color: #0f172a; margin-bottom: 6px; } .location { font-size: 14px; color: #64748b; } .price-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px 20px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; } .price-label { font-size: 12px; color: #64748b; text-transform: uppercase; } .price-value { font-size: 24px; font-weight: 800; color: #059669; } .specs { display: flex; gap: 16px; font-size: 13px; font-weight: 600; color: #334155; } .main-photo { width: 100%; height: 340px; object-fit: cover; border-radius: 12px; margin-bottom: 12px; } .photo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 24px; } .photo-grid img { width: 100%; height: 140px; object-fit: cover; border-radius: 8px; } .section-title { font-size: 15px; font-weight: 700; color: #0f172a; margin-bottom: 8px; border-left: 3px solid #059669; padding-left: 8px; } .description { font-size: 14px; line-height: 1.6; color: #475569; white-space: pre-line; margin-bottom: 32px; } .footer { border-top: 2px solid #e2e8f0; padding-top: 16px; margin-top: 24px; display: flex; justify-content: space-between; align-items: center; } .broker-info { font-size: 13px; color: #1e293b; } .broker-phone { font-size: 14px; font-weight: 700; color: #059669; margin-top: 2px; } .doc-date { font-size: 11px; color: #94a3b8; } @media print { body { padding: 0; } @page { margin: 1.5cm; } } </style> </head> <body> <div class="header"> <div> <div class="brand">Mota Negócios Imobiliários</div> <div style="margin-top: 8px;"> <span class="badge">${p.kind} · ${p.purpose === "venda" ? "Venda" : "Aluguel"}</span> <h1>${p.title}</h1> ${location ?📍 ${location}` : ""}
 
-
-Valor do Investimento
-${formattedPrice}
-
-
-${p.bedrooms != null ? <span>🛏️ ${p.bedrooms} Quartos</span> : ""}
-${p.bathrooms != null ? <span>🚿 ${p.bathrooms} Banheiros</span> : ""}
-${p.parking != null ? <span>🚗 ${p.parking} Vagas</span> : ""}
-${p.area != null ? <span>📐 ${p.area} m²</span> : ""}
-
-${photos.length > 0 ? <img src="${photos}" class="main-photo" alt="Foto principal" />
-
-${photos.slice(1, 7).map((url) => <img src="${url}" alt="Foto do imóvel" />).join("")}
-
-: ""} : ""}
-${p.description ? <div> <div class="section-title">Descrição do Imóvel</div> <p class="description">${p.description}</p> </div> : ""}
-Atendimento: ${corretorNome}${corretorCreci ? — ${corretorCreci.toUpperCase().includes("CRECI") ? corretorCreci :CRECI: ${corretorCreci}} : ""}
-${corretorTelefone ? <div class="broker-phone">📱 WhatsApp / Tel: ${corretorTelefone}</div> : ""}
-${corretorEmail ? <div style="font-size: 12px; color: #475569; margin-top: 2px;">✉️ ${corretorEmail}</div> : ""}
-
-Ficha gerada em ${new Date().toLocaleDateString("pt-BR")}
-window.onload = function() {
-setTimeout(() => {
-window.print();
-}, 700);
-};
-
-
-
-`;
-printWindow.document.open();
-printWindow.document.write(html);
-printWindow.document.close();
-}
 function PropertyDetailsDialog({
 p,
 open,
