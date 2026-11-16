@@ -226,34 +226,61 @@ function PropertyForm({ initial, onDone }: { initial: Property | null; onDone: (
       <Field label="Telefone do proprietário" className="col-span-2">
         <Input value={f.owner_phone} onChange={(e) => set("owner_phone")(e.target.value)} />
       </Field>
-          <Field label="Descrição" className="col-span-2">
-      <Textarea rows={4} value={f.description} onChange={(e) => set("description")(e.target.value)} />
-    </Field>
-    <div className="col-span-2 space-y-2">
-      <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm hover:bg-muted">
+                <Field label="Descrição" className="col-span-2">
+        <Textarea rows={4} value={f.description} onChange={(e) => set("description")(e.target.value)} />
+      </Field>
 
-        <p className="text-xs text-muted-foreground mb-2">Fotos</p>
-        <div className="flex flex-wrap gap-2">
-          {photos.map((p) => (
-            <div key={p} className="relative h-20 w-28 overflow-hidden rounded-lg bg-muted">
-              {urls?.[p] && <img src={urls[p]} alt="" className="h-full w-full object-cover" />}
-              <button
-                type="button"
-                onClick={() => setPhotos((x) => x.filter((y) => y !== p))}
-                className="absolute right-1 top-1 rounded-full bg-card p-0.5"
-                aria-label="Remover foto"
+      <div className="col-span-2 space-y-2">
+        <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm hover:bg-muted">
+          <ImagePlus className="h-4 w-4" />
+          <span>{uploading ? "Enviando fotos..." : "Adicionar fotos"}</span>
+          <input
+            type="file"
+            accept="image/*"
+            multiple
+            disabled={uploading}
+            onChange={handleUpload}
+            className="hidden"
+          />
+        </label>
+
+        {f.photos.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {f.photos.map((path, idx) => (
+              <span
+                key={path}
+                className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-1 text-xs"
               >
-                <X className="h-3 w-3" />
-              </button>
-            </div>
-          ))}
+                Foto {idx + 1}
+                <button
+                  type="button"
+                  onClick={() =>
+                    setF((prev) => ({
+                      ...prev,
+                      photos: prev.photos.filter((_, i) => i !== idx),
+                    }))
+                  }
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <Button className="col-span-2" disabled={save.isPending || uploading}>
+        {save.isPending ? "Salvando..." : "Salvar imóvel"}
+      </Button>
+
           <label className="flex h-20 w-28 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed text-xs text-muted-foreground hover:bg-muted">
             <ImagePlus className="h-5 w-5" />
             {uploading ? "Enviando..." : "Adicionar"}
             <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => upload(e.target.files)} />
           </label>
         </div>
-      <Button className="col-span-2 md:col-span-4" disabled={save.isPending || uploading}>
+      </div>
+<Button className="col-span-2 md:col-span-4" disabled={save.isPending || uploading}>
 Salvar imóvel
 
 async function generatePropertyPDF(p: Property, photoUrls: Record<string, string> = {}) {
