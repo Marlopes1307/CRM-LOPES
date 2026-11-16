@@ -398,108 +398,119 @@ function ClientsPage() {
           />
         </div>
       </div>
-
       {list.length === 0 ? (
         <Empty>
           {tab === "adiado"
             ? "Nenhum cliente com compra adiada no momento."
-: "Nenhum cliente ativo encontrado."} 
+            : "Nenhum cliente ativo encontrado."}
+        </Empty>
+      ) : (
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {list.map((c) => {
+            const wa = whatsappLink(c.phone);
+            const isDue = c.status === "adiado" && c.follow_up_date && c.follow_up_date <= todayStr;
+            const propMatches = getMatchingPropertiesForClient(c, sharedProperties);
 
-) : ( 
+            return (
+              <div
+                key={c.id}
+                className={`rounded-xl border bg-card p-5 shadow-card ${
+                  isDue ? "border-amber-500 ring-1 ring-amber-500/30" : ""
+                }`}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <h3 className="text-lg">{c.name}</h3>
+                    <p className="text-xs text-muted-foreground capitalize">
+                      {c.type}
+                      {c.source ? ` · ${c.source}` : ""}
+                    </p>
+                  </div>
+                  <Badge variant="secondary">{stageLabel(c.stage)}</Badge>
+                </div>
 
-{list.map((c) => { 
-const wa = whatsappLink(c.phone); 
-const isDue = c.status === "adiado" && c.follow_up_date && c.follow_up_date <= todayStr; 
-const propMatches = getMatchingPropertiesForClient(c, sharedProperties);
-retornar ( 
-<div 
-key={c.id} 
-className={ rounded-xl border bg-card p-5 shadow-card ${ isDue ? "border-amber-500 ring-1 ring-amber-500/30" : "" }} 
-> 
+                {c.status !== "adiado" && propMatches.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setEditing(c)}
+                    className="mt-2.5 inline-flex items-center gap-1.5 rounded-md bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-500/20 transition-colors"
+                  >
+                    <Building2 className="h-3.5 w-3.5" />
+                    {propMatches.length} {propMatches.length === 1 ? "imóvel compatível" : "imóveis compatíveis"}
+                  </button>
+                )}
 
+                {c.status === "adiado" && (
+                  <div className="mt-3 rounded-lg bg-amber-500/10 border border-amber-500/20 p-2.5 text-xs space-y-1">
+                    {c.deferred_reason && (
+                      <p className="text-foreground">
+                        <strong>Motivo:</strong> {c.deferred_reason}
+                      </p>
+                    )}
+                    {c.follow_up_date && (
+                      <p className={isDue ? "font-bold text-amber-600" : "text-muted-foreground"}>
+                        Retorno previsto: {formatDateBR(c.follow_up_date)} {isDue ? "(Hora de retomar!)" : ""}
+                      </p>
+                    )}
+                  </div>
+                )}
 
-{c.name} 
+                {c.interest && <p className="mt-3 text-sm">{c.interest}</p>}
+                {c.budget != null && (
+                  <p className="mt-1 text-sm font-semibold text-primary">Até {brl(Number(c.budget))}</p>
+                )}
 
-{c.type} 
-{c.source ?  · ${c.source}: ""} 
-
-
-{stageLabel(c.stage)}
-{c.status !== "adiado" && propMatches.length > 0 && ( 
-<button 
-type="button" 
-onClick={() => setEditing(c)} 
-className="mt-2.5 inline-flex items-center gap-1.5 rounded-md bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-500/20 transition-colors" 
-> 
-
-{propMatches.length} {propMatches.length === 1 ? "imóvel compatível" : "imóvel compatível"} 
-
-)}
-{c.status === "adiado" && (
-
-{c.deferred_reason && (
-
-Motivo: {c.deferred_reason}
-
-)}
-{c.follow_up_date && (
-<p className={isDue ? "font-bold text-amber-600" : "text-muted-foreground"}>
-Retorno previsto: {formatDateBR(c.follow_up_date)} {isDue ? "(Hora de retomar!)" : ""}
-
-)}
-
-)}
-{c.interest && {c.interest}} 
-{c.budget != null && ( 
-Até {brl(Number(c.budget))} 
-)}
-{wa && ( 
-
-
-
-
-
-)} 
-{c.phone && ( <a href={ } aria-label="Ligar">
-
- )} {c.status === "adiado" && ( <Button size="sm" variant="outline" className="h-8 text-xs mr-1" onClick={() => save.mutate({ id: c.id, status: "ativo", deferred_reason: null, follow_up_date: null, } as never) } title="Mover de volta para Clientes Ativos" > Reativar )} <Button size="icon" variant="ghost" onClick={() => setEditing(c)} aria-label="Editar"> <Button size="icon" variant="ghost" onClick={() => confirm("Excluir cliente?") && remove.mutate(c.id)} aria-label="Excluir" > ); })} )}tel:${c.phone}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+                <div className="mt-4 flex items-center gap-1">
+                  {wa && (
+                    <Button asChild size="icon" variant="ghost">
+                      <a href={wa} target="_blank" rel="noreferrer" aria-label="WhatsApp">
+                        <MessageCircle className="h-4 w-4" />
+                      </a>
+                    </Button>
+                  )}
+                  {c.phone && (
+                    <Button asChild size="icon" variant="ghost">
+                      <a href={`tel:${c.phone}`} aria-label="Ligar">
+                        <Phone className="h-4 w-4" />
+                      </a>
+                    </Button>
+                  )}
+                  <div className="flex-1" />
+                  {c.status === "adiado" && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8 text-xs mr-1"
+                      onClick={() =>
+                        save.mutate({
+                          id: c.id,
+                          status: "ativo",
+                          deferred_reason: null,
+                          follow_up_date: null,
+                        } as never)
+                      }
+                      title="Mover de volta para Clientes Ativos"
+                    >
+                      <RotateCcw className="mr-1 h-3.5 w-3.5" /> Reativar
+                    </Button>
+                  )}
+                  <Button size="icon" variant="ghost" onClick={() => setEditing(c)} aria-label="Editar">
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => confirm("Excluir cliente?") && remove.mutate(c.id)}
+                    aria-label="Excluir"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       <Dialog open={editing !== undefined} onOpenChange={(o) => !o && setEditing(undefined)}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
@@ -512,3 +523,5 @@ Até {brl(Number(c.budget))}
     </>
   );
 }
+
+      
