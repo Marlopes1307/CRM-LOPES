@@ -350,7 +350,7 @@ async function generatePropertyPDF(p: Property, photoUrls: Record<string, string
 
            <div class="footer">
         <div class="broker-info">
-          <div>Atendimento: <strong>${corretorNome}</strong> ${corretorCreci ? `(${corretorCreci})` : ""}</div>
+          <div>Atendimento: <strong>${corretorNome}</strong>${corretorCreci ? ` — ${corretorCreci.toUpperCase().includes("CRECI") ? corretorCreci : `CRECI: ${corretorCreci}`}` : ""}</div>
           ${corretorTelefone ? `<div class="broker-phone">📱 WhatsApp / Tel: ${corretorTelefone}</div>` : ""}
           ${corretorEmail ? `<div style="font-size: 12px; color: #475569; margin-top: 2px;">✉️ ${corretorEmail}</div>` : ""}
         </div>
