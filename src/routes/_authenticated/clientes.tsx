@@ -22,6 +22,88 @@ type Client = Row<"clients"> & {
   deferred_reason?: string | null;
   follow_up_date?: string | null;
 };
+type PropertyItem = Row<"properties"> & {
+  captador_name?: string | null;
+};
+
+function getMatchingPropertiesForClient(c: {
+  type?: string | null;
+  budget?: number | string | null;
+  interest?: string | null;
+  stage?: string | null;
+  status?: string | null;
+}, properties: PropertyItem[]) {
+  if (c.stage === "fechado" || c.stage === "perdido" || c.status === "adiado") return [];
+  if (c.type && !["comprador", "investidor", "locatario"].includes(c.type)) return [];
+
+  const normalize = (str: string) =>
+    str
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase();
+
+  const stopWords = new Set([
+    "com", "para", "que", "dos", "das", "por", "uma", "uns", "ate", "em", "na", "no", "de", "do", "da", "ou", "e",
+  ]);
+
+  const budget = c.budget != null && c.budget !== "" ? Number(c.budget) : null;
+  const keywords = normalize(c.interest ?? "")
+    .split(/[\s,.;/-]+/)
+    .filter((w) => w.length >= 2 && !stopWords.has(w));
+
+  return properties
+    .filter((p) => {
+      if (p.status !== "disponivel") return false;
+      if (c.type === "locatario" && p.purpose !== "aluguel") return false;
+      if ((c.type === "comprador" || c.type === "investidor") && p.purpose === "aluguel") return false;
+
+      const propPrice = p.price != null ? Number(p.price) : null;
+      const budgetOk = propPrice == null || budget == null || budget * 1.2 >= propPrice;
+      if (!budgetOk) return false;
+
+      if (keywords.length === 0) return budget != null && propPrice != null;
+
+      const extraTags = [
+        p.kind === "apartamento" ? "ap apto apartamento" : p.kind,
+        p.bedrooms != null ? `${p.bedrooms} quarto quartos qts` : "",
+        p.parking != null ? `${p.parking} vaga vagas` : "",
+      ];
+
+      const propText = normalize(
+        [p.title, p.kind, p.purpose, p.address, p.city, p.description, ...extraTags]
+          .filter(Boolean)
+          .join(" "),
+      );
+
+      return keywords.some((kw) => propText.includes(kw));
+    })
+    .map((p) => {
+      const propPrice = p.price != null ? Number(p.price) : null;
+      const extraTags = [
+        p.kind === "apartamento" ? "ap apto apartamento" : p.kind,
+        p.bedrooms != null ? `${p.bedrooms} quarto quartos qts` : "",
+        p.parking != null ? `${p.parking} vaga vagas` : "",
+      ];
+      const propText = normalize(
+        [p.title, p.kind, p.purpose, p.address, p.city, p.description, ...extraTags]
+          .filter(Boolean)
+          .join(" "),
+      );
+      const matchedWords = keywords.filter((kw) => propText.includes(kw));
+      const reasons: string[] = [];
+
+      if (budget != null && propPrice != null) {
+        reasons.push(budget >= propPrice ? "Dentro do orçamento" : "Próximo ao teto (+20%)");
+      }
+      if (matchedWords.length > 0) {
+        reasons.push(`Match: ${matchedWords.slice(0, 3).join(", ")}`);
+      }
+
+      return { property: p, reasons, score: matchedWords.length };
+    })
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 6);
+}
 
 const blank = {
   name: "",
@@ -136,7 +218,63 @@ export function ClientForm({ initial, onDone }: { initial?: Client | null | unde
       <Field label="Anotações" className="col-span-2">
         <Textarea rows={3} value={f.notes} onChange={(e) => set("notes")(e.target.value)} />
       </Field>
+     const { data: sharedProperties = [] } = useQuery({
+  queryKey: ["shared_properties"],
+  queryFn: async () => {
+    const { data, error } = await supabase
+      .from("shared_properties" as any)
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+    return (data ?? []) as PropertyItem[];
+  },
+});
+
+const matchingProperties = useMemo(
+  () => getMatchingPropertiesForClient(f, sharedProperties),
+  [f, sharedProperties],
+);
       <Button className="col-span-2" disabled={save.isPending}>
+           <div className="col-span-2 rounded-xl border border-primary/20 bg-primary/5 p-3.5 space-y-2">
+     <div className="flex items-center justify-between">
+       <h4 className="text-xs font-semibold flex items-center gap-1.5 text-foreground">
+         <Building2 className="h-4 w-4 text-primary" />
+         Imóveis Compatíveis na Carteira ({matchingProperties.length})
+       </h4>
+       <span className="text-[11px] text-muted-foreground">Atualiza em tempo real</span>
+     </div>
+
+     {matchingProperties.length === 0 ? (
+       <p className="text-xs text-muted-foreground">
+         Nenhum imóvel disponível compatível encontrado para o orçamento e interesse informados.
+       </p>
+     ) : (
+       <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+         {matchingProperties.map(({ property: p, reasons }) => (
+           <div key={p.id} className="flex items-center justify-between gap-2 rounded-lg border bg-card p-2.5 text-xs">
+             <div className="min-w-0 flex-1">
+               <p className="font-semibold truncate">{p.title}</p>
+               <p className="text-muted-foreground truncate">
+                 {[p.address, p.city].filter(Boolean).join(", ") || "Localização não informada"}
+               </p>
+               {reasons.length > 0 && (
+                 <p className="text-[11px] text-emerald-700 font-medium truncate">
+                   {reasons.join(" · ")}
+                 </p>
+               )}
+             </div>
+             <div className="text-right shrink-0">
+               <p className="font-bold text-primary">
+                 {p.price != null ? brl(Number(p.price)) : "Sob consulta"}
+               </p>
+               <p className="text-[10px] uppercase text-muted-foreground">{p.kind}</p>
+             </div>
+           </div>
+         ))}
+       </div>
+     )}
+   </div>
+
         Salvar cliente
       </Button>
     </form>
@@ -173,6 +311,16 @@ function ClientsPage() {
       const isDeferred = c.status === "adiado";
       if (tab === "adiado" && !isDeferred) return false;
       if (tab === "ativo" && isDeferred) return false;
+{c.status !== "adiado" && propMatches.length > 0 && (
+  <button
+    type="button"
+    onClick={() => setEditing(c)}
+    className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-emerald-500/10 px-2 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-500/20 transition-colors"
+  >
+    <Building2 className="h-3.5 w-3.5" />
+    {propMatches.length} {propMatches.length === 1 ? "imóvel compatível" : "imóveis compatíveis"}
+  </button>
+)}
 
       return (
         (stage === "todos" || c.stage === stage) &&
