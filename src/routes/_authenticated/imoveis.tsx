@@ -440,13 +440,13 @@ function PropertyDetailsDialog({
         .join(" "),
     );
 
-    const stopWords = new Set(["com", "para", "que", "dos", "das", "por", "uma", "uns", "ate", "em", "na", "no", "de", "do", "da"]);
+    const stopWords = new Set([
+      "com", "para", "que", "dos", "das", "por", "uma", "uns", "ate", "em", "na", "no", "de", "do", "da", "ou", "e",
+    ]);
 
-    return clients
+    return (clients as ClientMatchItem[])
       .filter((c) => {
-        const isDeferred = (c as { status?: string }).status === "adiado";
-        if (c.stage === "fechado" || c.stage === "perdido" || isDeferred) return false;
-
+        if (c.stage === "fechado" || c.stage === "perdido" || c.status === "adiado") return false;
         if (c.type === "locatario" && p.purpose !== "aluguel") return false;
         if ((c.type === "comprador" || c.type === "investidor") && p.purpose === "aluguel") return false;
 
@@ -458,10 +458,29 @@ function PropertyDetailsDialog({
           .split(/[\s,.;/-]+/)
           .filter((w) => w.length >= 2 && !stopWords.has(w));
 
-        if (keywords.length === 0) return true;
+        if (keywords.length === 0) return budget != null && propPrice != null;
 
         return keywords.some((kw) => propText.includes(kw));
       })
+      .map((c) => {
+        const budget = c.budget != null ? Number(c.budget) : null;
+        const keywords = normalize(c.interest ?? "")
+          .split(/[\s,.;/-]+/)
+          .filter((w) => w.length >= 2 && !stopWords.has(w));
+
+        const matchedWords = keywords.filter((kw) => propText.includes(kw));
+        const reasons: string[] = [];
+
+        if (budget != null && propPrice != null) {
+          reasons.push(budget >= propPrice ? "Dentro do orçamento" : "Orçamento próximo (+20%)");
+        }
+        if (matchedWords.length > 0) {
+          reasons.push(`Interesse: ${matchedWords.slice(0, 3).join(", ")}`);
+        }
+
+        return { client: c, reasons, score: matchedWords.length };
+      })
+      .sort((a, b) => b.score - a.score)
       .slice(0, 8);
   }, [clients, p]);
 
@@ -573,20 +592,20 @@ function PropertyDetailsDialog({
           <div className="flex items-center justify-between">
             <h4 className="text-sm font-semibold flex items-center gap-2 text-foreground">
               <Users className="h-4 w-4 text-emerald-600" />
-              Clientes Compatíveis ({matches.length})
+              Clientes Compatíveis ({matchingClients.length})
             </h4>
             <span className="text-[11px] text-muted-foreground">
-              Cruzamento automático por orçamento e perfil
+              Cruzamento automático por orçamento e interesse
             </span>
           </div>
 
-          {matches.length === 0 ? (
+          {matchingClients.length === 0 ? (
             <p className="text-xs text-muted-foreground">
               Nenhum cliente ativo compatível encontrado para este perfil e faixa de valor.
             </p>
           ) : (
             <div className="grid gap-2 sm:grid-cols-2">
-              {matches.map(({ client: c, reasons }) => {
+              {matchingClients.map(({ client: c, reasons }) => {
                 const wa = whatsappLink(c.phone);
                 return (
                   <div
@@ -626,22 +645,23 @@ function PropertyDetailsDialog({
           )}
         </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4">
-       <p className="text-xs text-muted-foreground">
-         {p.captador_name ? `Captado por: ${p.captador_name}` : ""}
-       </p>
-       <Button
-         type="button"
-         onClick={() => generatePropertyPDF(p, urls ?? {})}
-         className="bg-emerald-600 hover:bg-emerald-700 text-white"
-       >
-         Gerar Ficha em PDF
-       </Button>
-     </div>
-   </DialogContent>
- </Dialog>
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4">
+          <p className="text-xs text-muted-foreground">
+            {p.captador_name ? `Captado por: ${p.captador_name}` : ""}
+          </p>
+          <Button
+            type="button"
+            onClick={() => generatePropertyPDF(p, urls ?? {})}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white"
+          >
+            Gerar Ficha em PDF
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
+
 
 function PropertiesPage() {
   const queryClient = useQueryClient();
