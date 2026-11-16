@@ -819,183 +819,265 @@ function PropertyCard({
   );
 }
 async function generatePropertyPDF(p: Property, photoUrls: Record<string, string> = {}) {
-toast.info("Preparando ficha em PDF...");
-let corretorNome = p.captador_name || "Mota Negócios Imobiliários";
-let corretorTelefone = "";
-let corretorEmail = "";
-let corretorCreci = "";
-try {
-const { data: { user } } = await supabase.auth.getUser();
-if (user) {
-const { data: profile } = await supabase
-.from("profiles")
-.select("*")
-.eq("id", user.id)
-.single();
-if (profile) {
-corretorNome = profile.full_name || profile.name || corretorNome;
-corretorTelefone = profile.phone || profile.whatsapp || profile.telefone || "";
-corretorEmail = profile.email || user.email || "";
-corretorCreci = profile.creci || "";
+  toast.info("Preparando ficha em PDF...");
+
+  let corretorNome = p.captador_name || "Mota Negócios Imobiliários";
+  let corretorTelefone = "";
+  let corretorEmail = "";
+  let corretorCreci = "";
+
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+
+      if (profile) {
+        corretorNome = profile.full_name || profile.name || corretorNome;
+        corretorTelefone = profile.phone || profile.whatsapp || profile.telefone || "";
+        corretorEmail = profile.email || user.email || "";
+        corretorCreci = profile.creci || "";
+      }
+    }
+  } catch (err) {
+    console.error("Erro ao buscar perfil do corretor:", err);
+  }
+
+  const photos = (p.photos ?? [])
+    .map((path) => photoUrls[path])
+    .filter(Boolean);
+
+  const formattedPrice = p.price != null ? brl(p.price) : "Sob consulta";
+  const location = [p.address, p.city].filter(Boolean).join(", ");
+
+  const printWindow = window.open("", "_blank");
+  if (!printWindow) {
+    toast.error("Por favor, permita pop-ups no navegador para gerar o PDF.");
+    return;
+  }
+
+  const html = `
+    <!DOCTYPE html>
+    <html lang="pt-BR">
+    <head>
+      <meta charset="UTF-8" />
+      <title>${p.title} - Ficha do Imóvel</title>
+      <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+        body { color: #1e293b; background: #fff; padding: 32px; max-width: 800px; margin: 0 auto; }
+        .header { border-bottom: 2px solid #0f172a; padding-bottom: 16px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: flex-end; }
+        .brand { font-size: 14px; font-weight: 700; color: #059669; text-transform: uppercase; letter-spacing: 1px; }
+        .badge { display: inline-block; background: #f1f5f9; color: #334155; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 6px; text-transform: uppercase; margin-bottom: 8px; }
+        h1 { font-size: 24px; color: #0f172a; margin-bottom: 6px; }
+        .location { font-size: 14px; color: #64748b; }
+        .price-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px 20px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; }
+        .price-label { font-size: 12px; color: #64748b; text-transform: uppercase; }
+        .price-value { font-size: 24px; font-weight: 800; color: #059669; }
+        .specs { display: flex; gap: 16px; font-size: 13px; font-weight: 600; color: #334155; }
+        .main-photo { width: 100%; height: 340px; object-fit: cover; border-radius: 12px; margin-bottom: 12px; }
+        .photo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 24px; }
+        .photo-grid img { width: 100%; height: 140px; object-fit: cover; border-radius: 8px; }
+        .section-title { font-size: 15px; font-weight: 700; color: #0f172a; margin-bottom: 8px; border-left: 3px solid #059669; padding-left: 8px; }
+        .description { font-size: 14px; line-height: 1.6; color: #475569; white-space: pre-line; margin-bottom: 32px; }
+        .footer { border-top: 2px solid #e2e8f0; padding-top: 16px; margin-top: 24px; display: flex; justify-content: space-between; align-items: center; }
+        .broker-info { font-size: 13px; color: #1e293b; }
+        .broker-phone { font-size: 14px; font-weight: 700; color: #059669; margin-top: 2px; }
+        .doc-date { font-size: 11px; color: #94a3b8; }
+        @media print {
+          body { padding: 0; }
+          @page { margin: 1.5cm; }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <div>
+          <div class="brand">Mota Negócios Imobiliários</div>
+          <div style="margin-top: 8px;">
+            <span class="badge">${p.kind} · ${p.purpose === "venda" ? "Venda" : "Aluguel"}</span>
+            <h1>${p.title}</h1>
+            ${location ? `<p class="location">📍 ${location}</p>` : ""}
+          </div>
+        </div>
+      </div>
+
+      <div class="price-box">
+        <div>
+          <div class="price-label">Valor do Investimento</div>
+          <div class="price-value">${formattedPrice}</div>
+        </div>
+        <div class="specs">
+          ${p.bedrooms != null ? `<span>🛏️ ${p.bedrooms} Quartos</span>` : ""}
+          ${p.bathrooms != null ? `<span>🚿 ${p.bathrooms} Banheiros</span>` : ""}
+          ${p.parking != null ? `<span>🚗 ${p.parking} Vagas</span>` : ""}
+          ${p.area != null ? `<span>📐 ${p.area} m²</span>` : ""}
+        </div>
+      </div>
+
+      ${photos.length > 0 ? `
+        <img src="${photos.at(0)}" class="main-photo" alt="Foto principal" />
+        ${photos.length > 1 ? `
+          <div class="photo-grid">
+            ${photos.slice(1, 7).map((url) => `<img src="${url}" alt="Foto do imóvel" />`).join("")}
+          </div>
+        ` : ""}
+      ` : ""}
+
+      ${p.description ? `
+        <div>
+          <div class="section-title">Descrição do Imóvel</div>
+          <p class="description">${p.description}</p>
+        </div>
+      ` : ""}
+
+      <div class="footer">
+        <div class="broker-info">
+          <div>Atendimento: <strong>${corretorNome}</strong>${corretorCreci ? ` — ${corretorCreci.toUpperCase().includes("CRECI") ? corretorCreci : `CRECI: ${corretorCreci}`}` : ""}</div>
+          ${corretorTelefone ? `<div class="broker-phone">📱 WhatsApp / Tel: ${corretorTelefone}</div>` : ""}
+          ${corretorEmail ? `<div style="font-size: 12px; color: #475569; margin-top: 2px;">✉️ ${corretorEmail}</div>` : ""}
+        </div>
+        <div class="doc-date">Ficha gerada em ${new Date().toLocaleDateString("pt-BR")}</div>
+      </div>
+
+      <script>
+        window.onload = function() {
+          setTimeout(() => {
+            window.print();
+          }, 700);
+        };
+      </script>
+    </body>
+    </html>
+  `;
+
+  printWindow.document.open();
+  printWindow.document.write(html);
+  printWindow.document.close();
 }
-}
-} catch (err) {
-console.error("Erro ao buscar perfil do corretor:", err);
-}
-const photos = (p.photos ?? [])
-.map((path) => photoUrls[path])
-.filter(Boolean);
-const formattedPrice = p.price != null ? brl(p.price) : "Sob consulta";
-const location = [p.address, p.city].filter(Boolean).join(", ");
-const printWindow = window.open("", "_blank");
-if (!printWindow) {
-toast.error("Por favor, permita pop-ups no navegador para gerar o PDF.");
-return;
-}
-const html = <!DOCTYPE html> <html lang="pt-BR"> <head> <meta charset="UTF-8" /> <title>${p.title} - Ficha do Imóvel</title> <style> * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; } body { color: #1e293b; background: #fff; padding: 32px; max-width: 800px; margin: 0 auto; } .header { border-bottom: 2px solid #0f172a; padding-bottom: 16px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: flex-end; } .brand { font-size: 14px; font-weight: 700; color: #059669; text-transform: uppercase; letter-spacing: 1px; } .badge { display: inline-block; background: #f1f5f9; color: #334155; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 6px; text-transform: uppercase; margin-bottom: 8px; } h1 { font-size: 24px; color: #0f172a; margin-bottom: 6px; } .location { font-size: 14px; color: #64748b; } .price-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px 20px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; } .price-label { font-size: 12px; color: #64748b; text-transform: uppercase; } .price-value { font-size: 24px; font-weight: 800; color: #059669; } .specs { display: flex; gap: 16px; font-size: 13px; font-weight: 600; color: #334155; } .main-photo { width: 100%; height: 340px; object-fit: cover; border-radius: 12px; margin-bottom: 12px; } .photo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 24px; } .photo-grid img { width: 100%; height: 140px; object-fit: cover; border-radius: 8px; } .section-title { font-size: 15px; font-weight: 700; color: #0f172a; margin-bottom: 8px; border-left: 3px solid #059669; padding-left: 8px; } .description { font-size: 14px; line-height: 1.6; color: #475569; white-space: pre-line; margin-bottom: 32px; } .footer { border-top: 2px solid #e2e8f0; padding-top: 16px; margin-top: 24px; display: flex; justify-content: space-between; align-items: center; } .broker-info { font-size: 13px; color: #1e293b; } .broker-phone { font-size: 14px; font-weight: 700; color: #059669; margin-top: 2px; } .doc-date { font-size: 11px; color: #94a3b8; } @media print { body { padding: 0; } @page { margin: 1.5cm; } } </style> </head> <body> <div class="header"> <div> <div class="brand">Mota Negócios Imobiliários</div> <div style="margin-top: 8px;"> <span class="badge">${p.kind} · ${p.purpose === "venda" ? "Venda" : "Aluguel"}</span> <h1>${p.title}</h1> ${location ?📍 ${location}` : ""}
 
-
-Valor do Investimento
-${formattedPrice}
-
-
-${p.bedrooms != null ? <span>🛏️ ${p.bedrooms} Quartos</span> : ""}
-${p.bathrooms != null ? <span>🚿 ${p.bathrooms} Banheiros</span> : ""}
-${p.parking != null ? <span>🚗 ${p.parking} Vagas</span> : ""}
-${p.area != null ? <span>📐 ${p.area} m²</span> : ""}
-
-${photos.length > 0 ? <img src="${photos[0]}" class="main-photo" alt="Foto principal" /> ${photos.length > 1 ?
-
-${photos.slice(1, 7).map((url) => <img src="${url}" alt="Foto do imóvel" />).join("")}
-
-: ""} : ""}
-${p.description ? <div> <div class="section-title">Descrição do Imóvel</div> <p class="description">${p.description}</p> </div> : ""}
-Atendimento: ${corretorNome}${corretorCreci ? — ${corretorCreci.toUpperCase().includes("CRECI") ? corretorCreci :CRECI: ${corretorCreci}} : ""}
-${corretorTelefone ? <div class="broker-phone">📱 WhatsApp / Tel: ${corretorTelefone}</div> : ""}
-${corretorEmail ? <div style="font-size: 12px; color: #475569; margin-top: 2px;">✉️ ${corretorEmail}</div> : ""}
-
-Ficha gerada em ${new Date().toLocaleDateString("pt-BR")}
-window.onload = function() {
-setTimeout(() => {
-window.print();
-}, 700);
-};
-
-
-
-`;
-printWindow.document.open();
-printWindow.document.write(html);
-printWindow.document.close();
-}
 function PropertyDetailsDialog({
-p,
-open,
-onClose,
+  p,
+  open,
+  onClose,
 }: {
-p: Property | null;
-open: boolean;
-onClose: () => void;
+  p: Property | null;
+  open: boolean;
+  onClose: () => void;
 }) {
-const { data: urls } = usePhotoUrls(p?.photos ?? []);
-const { rows: allClients } = useTable("clients");
-const [activePhoto, setActivePhoto] = useState(0);
-const matchingClients = useMemo(() => {
-if (!p) return [];
-const propPrice = p.price != null ? Number(p.price) : null;
-const propText = [p.title, p.kind, p.purpose, p.address, p.city, p.description]
-.filter(Boolean)
-.join(" ")
-.toLowerCase();
-return allClients
-.filter((c) => {
-const isDeferred = (c as { status?: string }).status === "adiado";
-if (c.stage === "fechado" || c.stage === "perdido" || isDeferred) return false;
-if (c.type === "locatario" && p.purpose !== "aluguel") return false;
-if ((c.type === "comprador" || c.type === "investidor") && p.purpose === "aluguel") return false;
-const budget = c.budget != null ? Number(c.budget) : null;
-const budgetOk = propPrice == null || budget == null || budget * 1.15 >= propPrice;
-if (!budgetOk) return false;
-const keywords = (c.interest ?? "")
-.toLowerCase()
-.split(/[\s,.;/-]+/)
-.filter((w) => w.length >= 3);
-return keywords.length === 0 || keywords.some((kw) => propText.includes(kw));
-})
-.slice(0, 6);
-}, [allClients, p]);
-if (!p) return null;
-const photos = p.photos ?? [];
-const currentUrl = photos[activePhoto] ? urls?.[photos[activePhoto]] : undefined;
-const status = PROPERTY_STATUS.find((s) => s.id === p.status)?.label;
-return (
-<Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+  const { data: urls } = usePhotoUrls(p?.photos ?? []);
+  const { rows: allClients } = useTable("clients");
+  const [activePhoto, setActivePhoto] = useState(0);
 
+  const matchingClients = useMemo(() => {
+    if (!p) return [];
+    const propPrice = p.price != null ? Number(p.price) : null;
+    const propText = [p.title, p.kind, p.purpose, p.address, p.city, p.description]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
 
+    return allClients
+      .filter((c) => {
+        const isDeferred = (c as { status?: string }).status === "adiado";
+        if (c.stage === "fechado" || c.stage === "perdido" || isDeferred) return false;
+        if (c.type === "locatario" && p.purpose !== "aluguel") return false;
+        if ((c.type === "comprador" || c.type === "investidor") && p.purpose === "aluguel") return false;
 
-{status}
+        const budget = c.budget != null ? Number(c.budget) : null;
+        const budgetOk = propPrice == null || budget == null || budget * 1.15 >= propPrice;
+        if (!budgetOk) return false;
 
-{p.kind} · {p.purpose}
+        const keywords = (c.interest ?? "")
+          .toLowerCase()
+          .split(/[\s,.;/-]+/)
+          .filter((w) => w.length >= 3);
 
+        return keywords.length === 0 || keywords.some((kw) => propText.includes(kw));
+      })
+      .slice(0, 6);
+  }, [allClients, p]);
 
-{p.title}
+  if (!p) return null;
 
-{[p.address, p.city].filter(Boolean).join(", ")}
+  const photos = p.photos ?? [];
+  const currentUrl = photos[activePhoto] ? urls?.[photos[activePhoto]] : undefined;
+  const status = PROPERTY_STATUS.find((s) => s.id === p.status)?.label;
 
-{photos.length > 0 ? (
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <div className="flex items-center gap-2">
+            <Badge>{status}</Badge>
+            <span className="text-xs uppercase text-muted-foreground">
+              {p.kind} · {p.purpose}
+            </span>
+          </div>
+          <DialogTitle className="text-xl pt-1">{p.title}</DialogTitle>
+          <p className="text-sm text-muted-foreground">
+            {[p.address, p.city].filter(Boolean).join(", ")}
+          </p>
+        </DialogHeader>
 
+        {photos.length > 0 ? (
+          <div className="space-y-3">
+            <div className="aspect-video w-full overflow-hidden rounded-xl bg-muted">
+              {currentUrl ? (
+                <img src={currentUrl} alt={p.title} className="h-full w-full object-cover" />
+              ) : (
+                <p className="p-8 text-center text-sm text-muted-foreground">Carregando foto...</p>
+              )}
+            </div>
+            {photos.length > 1 && (
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                {photos.map((path, idx) => (
+                  <Button
+                    key={path}
+                    type="button"
+                    variant={activePhoto === idx ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setActivePhoto(idx)}
+                  >
+                    Foto {idx + 1}
+                  </Button>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          <p className="rounded-xl bg-muted p-6 text-center text-sm text-muted-foreground">
+            Nenhuma foto cadastrada
+          </p>
+        )}
 
-{currentUrl ? (
+        <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border bg-muted/30 p-4">
+          <div>
+            <p className="text-xs text-muted-foreground">Valor</p>
+            <p className="text-xl font-bold text-primary">
+              {p.price != null ? brl(p.price) : "Sob consulta"}
+            </p>
+          </div>
+{p.bedrooms != null && ( 
 
-) : (
-Carregando foto...
-)}
+{p.bedrooms} quartos 
 
-{photos.length > 1 && (
+)} 
+{p.bathrooms != null && ( 
 
-{photos.map((path, idx) => (
-<Button
-key={path}
-type="button"
-variant={activePhoto === idx ? "default" : "outline"}
-size="sm"
-onClick={() => setActivePhoto(idx)}
->
-Foto {idx + 1}
+{p.bathrooms} banheiros 
 
-))}
+)} 
+{p.parking != null && ( 
 
-)}
+{p.parking} vagas 
 
-) : (
+)} 
+{p.area != null && ( 
 
-Nenhuma foto cadastrada
-
-)}
-Valor
-
-{p.price != null ? brl(p.price) : "Sob consulta"}
-
-
-
-{p.bedrooms != null && (
-
- {p.bedrooms} quartos
-
-)}
-{p.bathrooms != null && (
-
- {p.bathrooms} banheiros
-
-)}
-{p.parking != null && (
-
- {p.parking} vagas
-
-)}
-{p.area != null && (
-
- {p.area} m²
+{p.area} m² 
 
 )}
 
@@ -1044,17 +1126,17 @@ return (
 })}
 
 )}
-{p.captador_name ? Captado por: ${p.captador_name} : ""}
+{p.captador_name ? Captado por: ${p.captador_name}: ""} 
 
-<Button
-type="button"
-onClick={() => generatePropertyPDF(p, urls ?? {})}
-className="bg-emerald-600 hover:bg-emerald-700 text-white"
->
-Gerar Ficha em PDF
-
-
+<Button 
+type="button" 
+onClick={() => generatePropertyPDF(p, urls ?? {})} 
+className="bg-emerald-600 hover:bg-emerald-700 text-white" 
+> 
+Gerar Ficha em PDF 
 
 
-);
+
+
+); 
 }
