@@ -405,163 +405,201 @@ async function generatePropertyPDF(p: Property, photoUrls: Record<string, string
 }
 
 function PropertyDetailsDialog({
-p,
-open,
-onClose,
+  p,
+  open,
+  onClose,
 }: {
-p: Property | null;
-open: boolean;
-onClose: () => void;
+  p: Property | null;
+  open: boolean;
+  onClose: () => void;
 }) {
-const { data: urls } = usePhotoUrls(p?.photos ?? []);
-const { rows: clients } = useTable("clients");
-const [activePhoto, setActivePhoto] = useState(0);
-const matches = useMemo(() => {
-if (!p) return [];
-return getMatchingClients(p, clients as ClientMatchItem[]);
-}, [p, clients]);
-if (!p) return null;
-const photos = p.photos ?? [];
-const currentUrl = photos[activePhoto] ? urls?.[photos[activePhoto]] : undefined;
-const status = PROPERTY_STATUS.find((s) => s.id === p.status)?.label;
-return (
-<Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+  const { data: urls } = usePhotoUrls(p?.photos ?? []);
+  const { rows: clients } = useTable("clients");
+  const [activePhoto, setActivePhoto] = useState(0);
 
+  const matches = useMemo(() => {
+    if (!p) return [];
+    return getMatchingClients(p, clients as ClientMatchItem[]);
+  }, [p, clients]);
 
+  if (!p) return null;
 
+  const photos = p.photos ?? [];
+  const currentUrl = photos[activePhoto] ? urls?.[photos[activePhoto]] : undefined;
+  const status = PROPERTY_STATUS.find((s) => s.id === p.status)?.label;
 
-{status}
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <div className="flex items-center justify-between gap-2 pr-6">
+            <div className="flex items-center gap-2">
+              <Badge>{status}</Badge>
+              <span className="text-xs uppercase text-muted-foreground">
+                {p.kind} · {p.purpose}
+              </span>
+            </div>
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => generatePropertyPDF(p, urls ?? {})}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+            >
+              Gerar Ficha em PDF
+            </Button>
+          </div>
+          <DialogTitle className="text-xl pt-1">{p.title}</DialogTitle>
+          <p className="text-sm text-muted-foreground">
+            {[p.address, p.city].filter(Boolean).join(", ")}
+          </p>
+        </DialogHeader>
 
-{p.kind} · {p.purpose}
+        {photos.length > 0 ? (
+          <div className="space-y-3">
+            <div className="aspect-video w-full overflow-hidden rounded-xl bg-muted">
+              {currentUrl ? (
+                <img src={currentUrl} alt={p.title} className="h-full w-full object-cover" />
+              ) : (
+                <p className="p-8 text-center text-sm text-muted-foreground">Carregando foto...</p>
+              )}
+            </div>
+            {photos.length > 1 && (
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                {photos.map((path, idx) => (
+                  <Button
+                    key={path}
+                    type="button"
+                    variant={activePhoto === idx ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setActivePhoto(idx)}
+                  >
+                    Foto {idx + 1}
+                  </Button>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          <p className="rounded-xl bg-muted p-6 text-center text-sm text-muted-foreground">
+            Nenhuma foto cadastrada
+          </p>
+        )}
 
+        <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border bg-muted/30 p-4">
+          <div>
+            <p className="text-xs text-muted-foreground">Valor</p>
+            <p className="text-xl font-bold text-primary">
+              {p.price != null ? brl(p.price) : "Sob consulta"}
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+            {p.bedrooms != null && (
+              <span className="flex items-center gap-1.5">
+                <BedDouble className="h-4 w-4" /> {p.bedrooms} quartos
+              </span>
+            )}
+            {p.bathrooms != null && (
+              <span className="flex items-center gap-1.5">
+                <Bath className="h-4 w-4" /> {p.bathrooms} banheiros
+              </span>
+            )}
+            {p.parking != null && (
+              <span className="flex items-center gap-1.5">
+                <Car className="h-4 w-4" /> {p.parking} vagas
+              </span>
+            )}
+            {p.area != null && (
+              <span className="flex items-center gap-1.5">
+                <Maximize className="h-4 w-4" /> {p.area} m²
+              </span>
+            )}
+          </div>
+        </div>
 
-<Button
-type="button"
-onClick={() => generatePropertyPDF(p, urls ?? {})}
-className="bg-emerald-600 hover:bg-emerald-700 text-white"
->
-Gerar Ficha em PDF
+        {p.description && (
+          <div className="space-y-1">
+            <h4 className="text-sm font-semibold">Descrição do imóvel</h4>
+            <p className="whitespace-pre-line text-sm text-muted-foreground leading-relaxed">
+              {p.description}
+            </p>
+          </div>
+        )}
 
-{p.title}
+        {/* Cruzamento Automático: Clientes Compatíveis */}
+        <div className="rounded-xl border border-emerald-600/25 bg-emerald-500/5 p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <h4 className="text-sm font-semibold flex items-center gap-2 text-foreground">
+              <Users className="h-4 w-4 text-emerald-600" />
+              Clientes Compatíveis ({matches.length})
+            </h4>
+            <span className="text-[11px] text-muted-foreground">
+              Cruzamento automático por orçamento e perfil
+            </span>
+          </div>
 
-{[p.address, p.city].filter(Boolean).join(", ")}
+          {matches.length === 0 ? (
+            <p className="text-xs text-muted-foreground">
+              Nenhum cliente ativo compatível encontrado para este perfil e faixa de valor.
+            </p>
+          ) : (
+            <div className="grid gap-2 sm:grid-cols-2">
+              {matches.map(({ client: c, reasons }) => {
+                const wa = whatsappLink(c.phone);
+                return (
+                  <div
+                    key={c.id}
+                    className="flex items-center justify-between gap-2 rounded-lg border bg-card p-2.5 text-xs shadow-sm"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="font-semibold text-sm truncate">{c.name}</p>
+                      {c.budget != null && (
+                        <p className="text-emerald-700 font-medium">
+                          Orçamento: até {brl(Number(c.budget))}
+                        </p>
+                      )}
+                      {reasons.length > 0 && (
+                        <p className="text-[11px] text-muted-foreground truncate">
+                          {reasons.join(" · ")}
+                        </p>
+                      )}
+                    </div>
 
-{photos.length > 0 ? (
+                    {wa && (
+                      <Button
+                        asChild
+                        size="sm"
+                        variant="outline"
+                        className="h-8 shrink-0 text-emerald-700 border-emerald-600/30 hover:bg-emerald-50"
+                      >
+                        <a href={wa} target="_blank" rel="noreferrer" title="Chamar no WhatsApp">
+                          <MessageCircle className="mr-1 h-3.5 w-3.5" /> WhatsApp
+                        </a>
+                      </Button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
 
-
-{currentUrl ? (
-
-) : (
-Carregando foto...
-)}
-
-{photos.length > 1 && (
-
-{photos.map((path, idx) => (
-<Button
-key={path}
-type="button"
-variant={activePhoto === idx ? "default" : "outline"}
-size="sm"
-onClick={() => setActivePhoto(idx)}
->
-Foto {idx + 1}
-
-))}
-
-)}
-
-) : (
-
-Nenhuma foto cadastrada
-
-)}
-Valor
-
-{p.price != null ? brl(p.price) : "Sob consulta"}
-
-
-
-{p.bedrooms != null && (
-
- {p.bedrooms} quartos
-
-)}
-{p.bathrooms != null && (
-
- {p.bathrooms} banheiros
-
-)}
-{p.parking != null && (
-
- {p.parking} vagas
-
-)}
-{p.area != null && (
-
- {p.area} m²
-
-)}
-
-{p.description && (
-
-Descrição do imóvel
-
-{p.description}
-
-
-)}
-{/* Cruzamento Automático: Clientes Compatíveis */}
-
-
-
-
-Clientes Compatíveis ({matches.length})
-
-
-Cruzamento automático por orçamento e perfil
-
-{matches.length === 0 ? (
-
-Nenhum cliente ativo compatível encontrado para este perfil e faixa de valor.
-
-) : (
-
-{matches.map(({ client: c, reasons }) => {
-const wa = whatsappLink(c.phone);
-return (
-
-
-{c.name}
-{c.budget != null && (
-
-Orçamento: até {brl(Number(c.budget))}
-
-)}
-{reasons.length > 0 && (
-
-{reasons.join(" · ")}
-
-)}
-{wa && (
-
-
- WhatsApp
-
-
-)}
-
-);
-})}
-
-)}
-{p.captador_name ? Captado por: ${p.captador_name} : ""}
-
-
-
-
-);
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4">
+          <p className="text-xs text-muted-foreground">
+            {p.captador_name ? `Captado por: ${p.captador_name}` : ""}
+          </p>
+          <Button
+            type="button"
+            onClick={() => generatePropertyPDF(p, urls ?? {})}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white"
+          >
+            Gerar Ficha em PDF
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
 }
+
 function PropertyCard({
 p,
 canEdit,
