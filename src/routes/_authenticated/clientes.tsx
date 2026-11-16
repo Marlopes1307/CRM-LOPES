@@ -143,6 +143,7 @@ export function ClientForm({ initial, onDone }: { initial?: Client | null | unde
     return obj;
   });
 
+
   const { data: sharedProperties = [] } = useQuery({
     queryKey: ["shared_properties"],
     queryFn: async () => {
