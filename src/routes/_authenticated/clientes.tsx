@@ -288,8 +288,6 @@ function ClientsPage() {
 Retorno previsto: {formatDateBR(c.follow_up_date)} {isDue ? "(Hora de retomar!)" : ""}
 
 )}
-
-)}
 {c.interest && {c.interest}}
 {c.budget != null && (
 Até {brl(Number(c.budget))}
