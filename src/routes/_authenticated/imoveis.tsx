@@ -278,9 +278,7 @@ function PropertyForm({ initial, onDone }: { initial: Property | null; onDone: (
             {uploading ? "Enviando..." : "Adicionar"}
             <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => upload(e.target.files)} />
           </label>
-        </div>
-    <Button className="col-span-2 md:col-span-4" disabled={save.isPending || uploading}>
-</form>
+     <Button className="col-span-2 md:col-span-4" disabled={save.isPending || uploading}>
 Salvar imóvel
 
 async function generatePropertyPDF(p: Property, photoUrls: Record<string, string> = {}) {
