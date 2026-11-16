@@ -245,7 +245,6 @@ function ClientsPage() {
           />
         </div>
       </div>
-
       {list.length === 0 ? (
         <Empty>
           {tab === "adiado"
@@ -283,73 +282,79 @@ function ClientsPage() {
                         <strong>Motivo:</strong> {c.deferred_reason}
                       </p>
                     )}
-{c.follow_up_date && (
-<p className={isDue ? "font-bold text-amber-600" : "text-muted-foreground"}>
-Retorno previsto: {formatDateBR(c.follow_up_date)} {isDue ? "(Hora de retomar!)" : ""}
+                    {c.follow_up_date && (
+                      <p className={isDue ? "font-bold text-amber-600" : "text-muted-foreground"}>
+                        Retorno previsto: {formatDateBR(c.follow_up_date)} {isDue ? "(Hora de retomar!)" : ""}
+                      </p>
+                    )}
+                  </div>
+                )}
 
-)}
-{c.interest && {c.interest}}
-{c.budget != null && (
-Até {brl(Number(c.budget))}
-)}
-{wa && (
+                {c.interest && <p className="mt-3 text-sm">{c.interest}</p>}
+                {c.budget != null && (
+                  <p className="mt-1 text-sm font-semibold text-primary">Até {brl(Number(c.budget))}</p>
+                )}
 
+                <div className="mt-4 flex items-center gap-1">
+                  {wa && (
+                    <Button asChild size="icon" variant="ghost">
+                      <a href={wa} target="_blank" rel="noreferrer" aria-label="WhatsApp">
+                        <MessageCircle className="h-4 w-4" />
+                      </a>
+                    </Button>
+                  )}
+                  {c.phone && (
+                    <Button asChild size="icon" variant="ghost">
+                      <a href={`tel:${c.phone}`} aria-label="Ligar">
+                        <Phone className="h-4 w-4" />
+                      </a>
+                    </Button>
+                  )}
+                  <div className="flex-1" />
+                  {c.status === "adiado" && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8 text-xs mr-1"
+                      onClick={() =>
+                        save.mutate({
+                          id: c.id,
+                          status: "ativo",
+                          deferred_reason: null,
+                          follow_up_date: null,
+                        } as never)
+                      }
+                      title="Mover de volta para Clientes Ativos"
+                    >
+                      <RotateCcw className="mr-1 h-3.5 w-3.5" /> Reativar
+                    </Button>
+                  )}
+                  <Button size="icon" variant="ghost" onClick={() => setEditing(c)} aria-label="Editar">
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => confirm("Excluir cliente?") && remove.mutate(c.id)}
+                    aria-label="Excluir"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
-
-
-
-)}
-{c.phone && (
-
-<a href={tel:${c.phone}} aria-label="Ligar">
-
-
-
-)}
-
-{c.status === "adiado" && (
-<Button
-size="sm"
-variant="outline"
-className="h-8 text-xs mr-1"
-onClick={() =>
-save.mutate({
-id: c.id,
-status: "ativo",
-deferred_reason: null,
-follow_up_date: null,
-} as never)
-}
-title="Mover de volta para Clientes Ativos"
->
- Reativar
-
-)}
-<Button size="icon" variant="ghost" onClick={() => setEditing(c)} aria-label="Editar">
-
-
-<Button
-size="icon"
-variant="ghost"
-onClick={() => confirm("Excluir cliente?") && remove.mutate(c.id)}
-aria-label="Excluir"
->
-
-
-
-
-);
-})}
-
-)}
-<Dialog open={editing !== undefined} onOpenChange={(o) => !o && setEditing(undefined)}>
-
-
-{editing ? "Editar cliente" : "Novo cliente"}
-
-<ClientForm initial={editing} onDone={() => setEditing(undefined)} />
-
-
-</>
-);
+      <Dialog open={editing !== undefined} onOpenChange={(o) => !o && setEditing(undefined)}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editing ? "Editar cliente" : "Novo cliente"}</DialogTitle>
+          </DialogHeader>
+          <ClientForm initial={editing} onDone={() => setEditing(undefined)} />
+        </DialogContent>
+      </Dialog>
+    </>
+  );
 }
