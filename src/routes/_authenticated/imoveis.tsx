@@ -226,10 +226,12 @@ function PropertyForm({ initial, onDone }: { initial: Property | null; onDone: (
       <Field label="Telefone do proprietário" className="col-span-2">
         <Input value={f.owner_phone} onChange={(e) => set("owner_phone")(e.target.value)} />
       </Field>
-      <Field label="Descrição" className="col-span-2 md:col-span-4">
-        <Textarea rows={3} value={f.description} onChange={(e) => set("description")(e.target.value)} />
-      </Field>
-      <div className="col-span-2 md:col-span-4">
+          <Field label="Descrição" className="col-span-2">
+      <Textarea rows={4} value={f.description} onChange={(e) => set("description")(e.target.value)} />
+    </Field>
+    <div className="col-span-2 space-y-2">
+      <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm hover:bg-muted">
+
         <p className="text-xs text-muted-foreground mb-2">Fotos</p>
         <div className="flex flex-wrap gap-2">
           {photos.map((p) => (
@@ -255,9 +257,6 @@ function PropertyForm({ initial, onDone }: { initial: Property | null; onDone: (
 <Button className="col-span-2 md:col-span-4" disabled={save.isPending || uploading}>
 Salvar imóvel
 
-
-);
-}
 async function generatePropertyPDF(p: Property, photoUrls: Record<string, string> = {}) {
 toast.info("Preparando ficha em PDF...");
 let corretorNome = p.captador_name || "Mota Negócios Imobiliários";
