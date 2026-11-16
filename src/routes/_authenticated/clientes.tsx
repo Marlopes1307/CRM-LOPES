@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Empty, Field, PageHeader, SelectField, opts } from "@/components/crm/ui";
 import { CLIENT_TYPES, SOURCES, STAGES, brl, stageLabel, whatsappLink } from "@/lib/crm";
 import { emptyToNull, useTable, type Row } from "@/lib/use-table";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_authenticated/clientes")({
   head: () => ({ meta: [{ title: "Clientes — Corretor CRM" }] }),
@@ -126,6 +127,7 @@ const STATUS_OPTIONS = [
 ];
 export function ClientForm({ initial, onDone }: { initial?: Client | null | undefined; onDone: () => void }) {
   const { save } = useTable("clients");
+  const navigate = useNavigate();
   const [f, setF] = useState<typeof blank>(() => {
     if (!initial) return blank;
     const obj = Object.fromEntries(
