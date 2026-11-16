@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   LogOut,
   ShieldCheck,
+  UserCircle,
   UserCog,
   Users,
   Wallet,
@@ -42,6 +43,7 @@ const baseNav = [
   { to: "/imoveis", label: "Imóveis", icon: Building2 },
   { to: "/agenda", label: "Agenda", icon: CalendarDays },
   { to: "/financeiro", label: "Financeiro", icon: Wallet },
+  { to: "/perfil", label: "Meu Perfil", icon: UserCircle },
 ] as const;
 
 function Layout() {
@@ -94,7 +96,7 @@ function Layout() {
           {baseNav.map((n) => (
             <Link
               key={n.to}
-              to={n.to}
+              to={n.to as never}
               className="group flex items-center justify-between rounded-xl px-3.5 py-2.5 text-sm font-medium text-slate-300 whitespace-nowrap transition-all duration-150 hover:bg-slate-800/80 hover:text-white"
               activeProps={{
                 className:
