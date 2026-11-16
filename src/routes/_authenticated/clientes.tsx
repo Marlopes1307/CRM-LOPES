@@ -12,10 +12,14 @@ import { Empty, Field, PageHeader, SelectField, opts } from "@/components/crm/ui
 import { CLIENT_TYPES, SOURCES, STAGES, brl, stageLabel, whatsappLink } from "@/lib/crm";
 import { emptyToNull, useTable, type Row } from "@/lib/use-table";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
 
-export const Route = createFileRoute("/_authenticated/clientes")({
-  head: () => ({ meta: [{ title: "Clientes — Corretor CRM" }] }),
-  component: ClientsPage,
+export const Route = createFileRoute("/_authenticated/imoveis")({
+  head: () => ({ meta: [{ title: "Imóveis — Corretor CRM" }] }),
+  validateSearch: (search: Record<string, unknown>) => ({
+    openId: typeof search.openId === "string" ? search.openId : undefined,
+  }),
+  component: PropertiesPage,
 });
 
 type Client = Row<"clients"> & {
@@ -153,11 +157,36 @@ export function ClientForm({ initial, onDone }: { initial?: Client | null | unde
   });
 
   const matchingProperties = useMemo(
-    () => getMatchingPropertiesForClient(f, sharedProperties),
-    [f, sharedProperties],
-  );
-
-  const set = (k: keyof typeof blank) => (v: string) => setF((p) => ({ ...p, [k]: v }));
+            {matchingProperties.map(({ property: p, reasons }) => (
+           <button
+             key={p.id}
+             type="button"
+             onClick={() => {
+               onDone();
+               navigate({ to: "/imoveis", search: { openId: p.id } as never });
+             }}
+             className="w-full text-left flex items-center justify-between gap-2 rounded-lg border bg-card p-2.5 text-xs hover:border-primary hover:bg-primary/5 transition-colors cursor-pointer"
+             title="Clique para abrir a ficha deste imóvel e gerar o PDF"
+           >
+             <div className="min-w-0 flex-1">
+               <p className="font-semibold truncate text-foreground">{p.title}</p>
+               <p className="text-muted-foreground truncate">
+                 {[p.address, p.city].filter(Boolean).join(", ") || "Localização não informada"}
+               </p>
+               {reasons.length > 0 && (
+                 <p className="text-[11px] text-emerald-700 font-medium truncate">
+                   {reasons.join(" · ")}
+                 </p>
+               )}
+             </div>
+             <div className="text-right shrink-0">
+               <p className="font-bold text-primary">
+                 {p.price != null ? brl(Number(p.price)) : "Sob consulta"}
+               </p>
+               <p className="text-[10px] font-medium text-primary underline">Abrir imóvel →</p>
+             </div>
+           </button>
+         ))}
 
   return (
     <form
