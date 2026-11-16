@@ -583,20 +583,20 @@ function PropertyDetailsDialog({
           )}
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4">
-          <p className="text-xs text-muted-foreground">
-            {p.captador_name ? `Captado por: ${p.captador_name}` : ""}
-          </p>
-          <Button
-            type="button"
-            onClick={() => generatePropertyPDF(p, urls ?? {})}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white"
-          >
-            Gerar Ficha em PDF
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4">
+       <p className="text-xs text-muted-foreground">
+         {p.captador_name ? `Captado por: ${p.captador_name}` : ""}
+       </p>
+       <Button
+         type="button"
+         onClick={() => generatePropertyPDF(p, urls ?? {})}
+         className="bg-emerald-600 hover:bg-emerald-700 text-white"
+       >
+         Gerar Ficha em PDF
+       </Button>
+     </div>
+   </DialogContent>
+ </Dialog>
   );
 }
 
