@@ -601,78 +601,86 @@ function PropertyDetailsDialog({
 }
 
 function PropertiesPage() {
-const queryClient = useQueryClient();
-const { data: me } = useCurrentUser();
-const { remove } = useTable("properties");
-const [open, setOpen] = useState(false);
-const [editing, setEditing] = useState<Property | null>(null);
-const [viewing, setViewing] = useState<Property | null>(null);
-const [query, setQuery] = useState("");
-const [statusFilter, setStatusFilter] = useState("all");
-const [ownerFilter, setOwnerFilter] = useState<"all" | "mine">("all");
-const { data: list = [], isLoading } = useQuery({
-queryKey: ["shared_properties"],
-queryFn: async () => {
-const { data, error } = await supabase
-.from("shared_properties" as any)
-.select("*")
-.order("created_at", { ascending: false });
-if (error) throw error;
-return (data ?? []) as Property[];
-},
-});
-const filtered = useMemo(() => {
-return list.filter((p) => {
-if (ownerFilter === "mine" && p.user_id !== me?.id) return false;
-if (statusFilter !== "all" && p.status !== statusFilter) return false;
-if (query.trim()) {
-const q = query.toLowerCase();
-const match = [p.title, p.address, p.city, p.kind, p.captador_name]
-.filter(Boolean)
-.some((v) => String(v).toLowerCase().includes(q));
-if (!match) return false;
-}
-return true;
-});
-}, [list, ownerFilter, statusFilter, query, me?.id]);
-return (
+  const queryClient = useQueryClient();
+  const { data: me } = useCurrentUser();
+  const { remove } = useTable("properties");
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<Property | null>(null);
+  const [viewing, setViewing] = useState<Property | null>(null);
+  const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [ownerFilter, setOwnerFilter] = useState<"all" | "mine">("all");
 
-<PageHeader
-title="Imóveis"
-subtitle="Carteira compartilhada da equipe"
-action={
-<Button
-onClick={() => {
-setEditing(null);
-setOpen(true);
-}}
->
+  const { data: list = [], isLoading } = useQuery({
+    queryKey: ["shared_properties"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("shared_properties" as any)
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as Property[];
+    },
+  });
 
-Novo imóvel
+  const filtered = useMemo(() => {
+    return list.filter((p) => {
+      if (ownerFilter === "mine" && p.user_id !== me?.id) return false;
+      if (statusFilter !== "all" && p.status !== statusFilter) return false;
+      if (query.trim()) {
+        const q = query.toLowerCase();
+        const match = [p.title, p.address, p.city, p.kind, p.captador_name]
+          .filter(Boolean)
+          .some((v) => String(v).toLowerCase().includes(q));
+        if (!match) return false;
+      }
+      return true;
+    });
+  }, [list, ownerFilter, statusFilter, query, me?.id]);
 
-}
-/>
-<Input
-placeholder="Buscar por título, endereço, cidade ou captador..."
-value={query}
-onChange={(e) => setQuery(e.target.value)}
-className="sm:max-w-sm"
-/>
-<Button
-variant={ownerFilter === "all" ? "default" : "outline"}
-size="sm"
-onClick={() => setOwnerFilter("all")}
->
-Todos ({list.length})
+  return (
+    <>
+      <PageHeader
+        title="Imóveis"
+        subtitle="Carteira compartilhada da equipe"
+        action={
+          <Button
+            onClick={() => {
+              setEditing(null);
+              setOpen(true);
+            }}
+          >
+            <Plus className="mr-1.5 h-4 w-4" />
+            Novo imóvel
+          </Button>
+        }
+      />
 
-<Button
-variant={ownerFilter === "mine" ? "default" : "outline"}
-size="sm"
-onClick={() => setOwnerFilter("mine")}
->
-          Meus imóveis
-        </Button>
-
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <Input
+          placeholder="Buscar por título, endereço, cidade ou captador..."
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          className="sm:max-w-sm"
+        />
+        <div className="flex items-center gap-1.5">
+          <Button
+            type="button"
+            variant={ownerFilter === "all" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setOwnerFilter("all")}
+          >
+            Todos ({list.length})
+          </Button>
+          <Button
+            type="button"
+            variant={ownerFilter === "mine" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setOwnerFilter("mine")}
+          >
+            Meus imóveis
+          </Button>
+        </div>
         <div className="w-48">
           <SelectField
             value={statusFilter}
@@ -680,8 +688,8 @@ onClick={() => setOwnerFilter("mine")}
             options={[{ id: "all", label: "Todos os status" }, ...PROPERTY_STATUS]}
           />
         </div>
-</button>
-      
+      </div>
+
       {isLoading ? (
         <p className="py-12 text-center text-sm text-muted-foreground">Carregando imóveis...</p>
       ) : filtered.length === 0 ? (
@@ -693,7 +701,10 @@ onClick={() => setOwnerFilter("mine")}
               key={p.id}
               p={p}
               onView={() => setViewing(p)}
-              onEdit={() => setEditing(p)}
+              onEdit={() => {
+                setEditing(p);
+                setOpen(true);
+              }}
               onDelete={() => confirm("Excluir este imóvel?") && remove.mutate(p.id)}
             />
           ))}
@@ -701,12 +712,18 @@ onClick={() => setOwnerFilter("mine")}
       )}
 
       {/* Modal de Cadastro / Edição */}
-      <Dialog open={editing !== undefined} onOpenChange={(v) => !v && setEditing(undefined)}>
+      <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editing ? "Editar imóvel" : "Novo imóvel"}</DialogTitle>
           </DialogHeader>
-          <PropertyForm initial={editing} onDone={() => setEditing(undefined)} />
+          <PropertyForm
+            initial={editing}
+            onDone={() => {
+              setOpen(false);
+              setEditing(null);
+            }}
+          />
         </DialogContent>
       </Dialog>
 
@@ -857,7 +874,7 @@ function PropertyForm({
 
   const set = (k: keyof typeof f) => (v: string) => setF((prev) => ({ ...prev, [k]: v }));
 
-  async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
     if (!files.length) return;
     setUploading(true);
@@ -914,9 +931,14 @@ function PropertyForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-3">
-      <Field label="Título do anúncio *" className="col-span-2">
-        <Input required value={f.title} onChange={(e) => set("title")(e.target.value)} />
+    <form onSubmit={handleSubmit} className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <Field label="Título *" className="col-span-2 md:col-span-4">
+        <Input
+          required
+          value={f.title}
+          onChange={(e) => set("title")(e.target.value)}
+          placeholder="Apartamento 3 quartos com varanda"
+        />
       </Field>
       <Field label="Tipo">
         <SelectField value={f.kind} onChange={set("kind")} options={opts(PROPERTY_KINDS)} />
@@ -934,10 +956,10 @@ function PropertyForm({
       <Field label="Status">
         <SelectField value={f.status} onChange={set("status")} options={PROPERTY_STATUS} />
       </Field>
-      <Field label="Valor (R$)">
+      <Field label="Preço (R$)">
         <Input type="number" value={f.price} onChange={(e) => set("price")(e.target.value)} />
       </Field>
-      <Field label="Endereço / Bairro">
+      <Field label="Endereço" className="col-span-2 md:col-span-3">
         <Input value={f.address} onChange={(e) => set("address")(e.target.value)} />
       </Field>
       <Field label="Cidade">
@@ -955,40 +977,62 @@ function PropertyForm({
       <Field label="Área (m²)">
         <Input type="number" value={f.area} onChange={(e) => set("area")(e.target.value)} />
       </Field>
-      <Field label="Nome do proprietário (interno)">
+      <Field label="Proprietário" className="col-span-2">
         <Input value={f.owner_name} onChange={(e) => set("owner_name")(e.target.value)} />
       </Field>
-      <Field label="Telefone do proprietário (interno)">
-<Input value={f.owner_phone} onChange={(e) => set("owner_phone")(e.target.value)} />
+      <Field label="Telefone do proprietário" className="col-span-2">
+        <Input value={f.owner_phone} onChange={(e) => set("owner_phone")(e.target.value)} />
+      </Field>
+      <Field label="Descrição" className="col-span-2 md:col-span-4">
+        <Textarea rows={4} value={f.description} onChange={(e) => set("description")(e.target.value)} />
+      </Field>
 
+      <div className="col-span-2 md:col-span-4 space-y-2">
+        <label className="flex h-20 w-28 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed text-xs text-muted-foreground hover:bg-muted">
+          <ImagePlus className="h-5 w-5" />
+          {uploading ? "Enviando..." : "Adicionar"}
+          <input
+            type="file"
+            accept="image/*"
+            multiple
+            disabled={uploading}
+            className="hidden"
+            onChange={handleUpload}
+          />
+        </label>
 
-<Textarea rows={4} value={f.description} onChange={(e) => set("description")(e.target.value)} />
-{f.photos.length > 0 && (
+        {f.photos.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {f.photos.map((path, idx) => (
+              <span
+                key={path}
+                className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-1 text-xs"
+              >
+                Foto {idx + 1}
+                <button
+                  type="button"
+                  onClick={() =>
+                    setF((prev) => ({
+                      ...prev,
+                      photos: prev.photos.filter((_, i) => i !== idx),
+                    }))
+                  }
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
 
-{f.photos.map((path, idx) => (
-
-Foto {idx + 1}
-<button
-type="button"
-onClick={() =>
-setF((prev) => ({
-...prev,
-photos: prev.photos.filter((_, i) => i !== idx),
-}))
+      <Button className="col-span-2 md:col-span-4" disabled={save.isPending || uploading}>
+        {save.isPending ? "Salvando..." : "Salvar imóvel"}
+      </Button>
+    </form>
+  );
 }
->
 
-
-
-))}
-
-)}
-<Button className="col-span-2" disabled={save.isPending || uploading}>
-{save.isPending ? "Salvando..." : "Salvar imóvel"}
-
-
-);
-}
 async function generatePropertyPDF(p: Property, photoUrls: Record<string, string> = {}) {
 toast.info("Preparando ficha em PDF...");
 let corretorNome = p.captador_name || "Mota Negócios Imobiliários";
