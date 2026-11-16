@@ -1,34 +1,32 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
-import { Building2, CalendarClock, MessageCircle, Pencil, Phone, Plus, RotateCcw, Search, Trash2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Empty, Field, PageHeader, SelectField, opts } from "@/components/crm/ui";
-import { CLIENT_TYPES, SOURCES, STAGES, brl, stageLabel, whatsappLink } from "@/lib/crm";
-import { emptyToNull, useTable, type Row } from "@/lib/use-table";
-
-
-export const Route = createFileRoute("/_authenticated/imoveis")({
-  head: () => ({ meta: [{ title: "Imóveis — Corretor CRM" }] }),
-  validateSearch: (search: Record<string, unknown>) => ({
-    openId: typeof search.openId === "string" ? search.openId : undefined,
-  }),
-  component: PropertiesPage,
+  import { createFileRoute, useNavigate } from "@tanstack/react-router";
+  import { useQuery } from "@tanstack/react-query";
+  import { useMemo, useState } from "react";
+  import { Building2, CalendarClock, MessageCircle, Pencil, Phone, Plus, RotateCcw, Search, Trash2 } from "lucide-react";
+  import { supabase } from "@/integrations/supabase/client";
+  import { Button } from "@/components/ui/button";
+  import { Input } from "@/components/ui/input";
+  import { Textarea } from "@/components/ui/textarea";
+  import { Badge } from "@/components/ui/badge";
+  import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+  import { Empty, Field, PageHeader, SelectField, opts } from "@/components/crm/ui";
+  import { CLIENT_TYPES, SOURCES, STAGES, brl, stageLabel, whatsappLink } from "@/lib/crm";
+  import { emptyToNull, useTable, type Row } from "@/lib/use-table";
+  
+  
+  export const Route = createFileRoute("/_authenticated/clientes")({
+  head: () => ({ meta: [{ title: "Clientes — Corretor CRM" }] }),
+  component: ClientsPage,
 });
 
-type Client = Row<"clients"> & {
-  status?: string | null;
-  deferred_reason?: string | null;
-  follow_up_date?: string | null;
-};
-type PropertyItem = Row<"properties"> & {
-  captador_name?: string | null;
-};
+  
+  type Client = Row<"clients"> & {
+    status?: string | null;
+    deferred_reason?: string | null;
+    follow_up_date?: string | null;
+  };
+  type PropertyItem = Row<"properties"> & {
+    captador_name?: string | null;
+  };
 
 function getMatchingPropertiesForClient(c: {
   type?: string | null;
