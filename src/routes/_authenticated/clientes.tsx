@@ -124,7 +124,6 @@ const STATUS_OPTIONS = [
   { id: "ativo", label: "Ativo (Em busca)" },
   { id: "adiado", label: "Compra Adiada (Fora de momento)" },
 ];
-
 export function ClientForm({ initial, onDone }: { initial?: Client | null | undefined; onDone: () => void }) {
   const { save } = useTable("clients");
   const [f, setF] = useState<typeof blank>(() => {
@@ -138,6 +137,23 @@ export function ClientForm({ initial, onDone }: { initial?: Client | null | unde
     if (!obj.status) obj.status = "ativo";
     return obj;
   });
+
+  const { data: sharedProperties = [] } = useQuery({
+    queryKey: ["shared_properties"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("shared_properties" as any)
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as PropertyItem[];
+    },
+  });
+
+  const matchingProperties = useMemo(
+    () => getMatchingPropertiesForClient(f, sharedProperties),
+    [f, sharedProperties],
+  );
 
   const set = (k: keyof typeof blank) => (v: string) => setF((p) => ({ ...p, [k]: v }));
 
@@ -218,63 +234,48 @@ export function ClientForm({ initial, onDone }: { initial?: Client | null | unde
       <Field label="Anotações" className="col-span-2">
         <Textarea rows={3} value={f.notes} onChange={(e) => set("notes")(e.target.value)} />
       </Field>
-     const { data: sharedProperties = [] } = useQuery({
-  queryKey: ["shared_properties"],
-  queryFn: async () => {
-    const { data, error } = await supabase
-      .from("shared_properties" as any)
-      .select("*")
-      .order("created_at", { ascending: false });
-    if (error) throw error;
-    return (data ?? []) as PropertyItem[];
-  },
-});
 
-const matchingProperties = useMemo(
-  () => getMatchingPropertiesForClient(f, sharedProperties),
-  [f, sharedProperties],
-);
+      <div className="col-span-2 rounded-xl border border-primary/20 bg-primary/5 p-3.5 space-y-2">
+        <div className="flex items-center justify-between">
+          <h4 className="text-xs font-semibold flex items-center gap-1.5 text-foreground">
+            <Building2 className="h-4 w-4 text-primary" />
+            Imóveis Compatíveis na Carteira ({matchingProperties.length})
+          </h4>
+          <span className="text-[11px] text-muted-foreground">Atualiza em tempo real</span>
+        </div>
+
+        {matchingProperties.length === 0 ? (
+          <p className="text-xs text-muted-foreground">
+            Nenhum imóvel disponível compatível encontrado para o orçamento e interesse informados.
+          </p>
+        ) : (
+          <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+            {matchingProperties.map(({ property: p, reasons }) => (
+              <div key={p.id} className="flex items-center justify-between gap-2 rounded-lg border bg-card p-2.5 text-xs">
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold truncate">{p.title}</p>
+                  <p className="text-muted-foreground truncate">
+                    {[p.address, p.city].filter(Boolean).join(", ") || "Localização não informada"}
+                  </p>
+                  {reasons.length > 0 && (
+                    <p className="text-[11px] text-emerald-700 font-medium truncate">
+                      {reasons.join(" · ")}
+                    </p>
+                  )}
+                </div>
+                <div className="text-right shrink-0">
+                  <p className="font-bold text-primary">
+                    {p.price != null ? brl(Number(p.price)) : "Sob consulta"}
+                  </p>
+                  <p className="text-[10px] uppercase text-muted-foreground">{p.kind}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       <Button className="col-span-2" disabled={save.isPending}>
-           <div className="col-span-2 rounded-xl border border-primary/20 bg-primary/5 p-3.5 space-y-2">
-     <div className="flex items-center justify-between">
-       <h4 className="text-xs font-semibold flex items-center gap-1.5 text-foreground">
-         <Building2 className="h-4 w-4 text-primary" />
-         Imóveis Compatíveis na Carteira ({matchingProperties.length})
-       </h4>
-       <span className="text-[11px] text-muted-foreground">Atualiza em tempo real</span>
-     </div>
-
-     {matchingProperties.length === 0 ? (
-       <p className="text-xs text-muted-foreground">
-         Nenhum imóvel disponível compatível encontrado para o orçamento e interesse informados.
-       </p>
-     ) : (
-       <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-         {matchingProperties.map(({ property: p, reasons }) => (
-           <div key={p.id} className="flex items-center justify-between gap-2 rounded-lg border bg-card p-2.5 text-xs">
-             <div className="min-w-0 flex-1">
-               <p className="font-semibold truncate">{p.title}</p>
-               <p className="text-muted-foreground truncate">
-                 {[p.address, p.city].filter(Boolean).join(", ") || "Localização não informada"}
-               </p>
-               {reasons.length > 0 && (
-                 <p className="text-[11px] text-emerald-700 font-medium truncate">
-                   {reasons.join(" · ")}
-                 </p>
-               )}
-             </div>
-             <div className="text-right shrink-0">
-               <p className="font-bold text-primary">
-                 {p.price != null ? brl(Number(p.price)) : "Sob consulta"}
-               </p>
-               <p className="text-[10px] uppercase text-muted-foreground">{p.kind}</p>
-             </div>
-           </div>
-         ))}
-       </div>
-     )}
-   </div>
-
         Salvar cliente
       </Button>
     </form>
@@ -291,6 +292,18 @@ function formatDateBR(isoDate?: string | null) {
 function ClientsPage() {
   const { rows, save, remove } = useTable("clients");
   const typedRows = rows as Client[];
+
+  const { data: sharedProperties = [] } = useQuery({
+    queryKey: ["shared_properties"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("shared_properties" as any)
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as PropertyItem[];
+    },
+  });
 
   const [tab, setTab] = useState<"ativo" | "adiado">("ativo");
   const [q, setQ] = useState("");
@@ -311,16 +324,6 @@ function ClientsPage() {
       const isDeferred = c.status === "adiado";
       if (tab === "adiado" && !isDeferred) return false;
       if (tab === "ativo" && isDeferred) return false;
-{c.status !== "adiado" && propMatches.length > 0 && (
-  <button
-    type="button"
-    onClick={() => setEditing(c)}
-    className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-emerald-500/10 px-2 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-500/20 transition-colors"
-  >
-    <Building2 className="h-3.5 w-3.5" />
-    {propMatches.length} {propMatches.length === 1 ? "imóvel compatível" : "imóveis compatíveis"}
-  </button>
-)}
 
       return (
         (stage === "todos" || c.stage === stage) &&
@@ -395,116 +398,119 @@ function ClientsPage() {
           />
         </div>
       </div>
+
       {list.length === 0 ? (
         <Empty>
           {tab === "adiado"
             ? "Nenhum cliente com compra adiada no momento."
-            : "Nenhum cliente ativo encontrado."}
-        </Empty>
-      ) : (
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {list.map((c) => {
-            const wa = whatsappLink(c.phone);
-            const isDue = c.status === "adiado" && c.follow_up_date && c.follow_up_date <= todayStr;
+: "Nenhum cliente ativo encontrado."} 
 
-            return (
-              <div
-                key={c.id}
-                className={`rounded-xl border bg-card p-5 shadow-card ${
-                  isDue ? "border-amber-500 ring-1 ring-amber-500/30" : ""
-                }`}
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <h3 className="text-lg">{c.name}</h3>
-                    <p className="text-xs text-muted-foreground capitalize">
-                      {c.type}
-                      {c.source ? ` · ${c.source}` : ""}
-                    </p>
-                  </div>
-                  <Badge variant="secondary">{stageLabel(c.stage)}</Badge>
-                </div>
+) : ( 
 
-                {c.status === "adiado" && (
-                  <div className="mt-3 rounded-lg bg-amber-500/10 border border-amber-500/20 p-2.5 text-xs space-y-1">
-                    {c.deferred_reason && (
-                      <p className="text-foreground">
-                        <strong>Motivo:</strong> {c.deferred_reason}
-                      </p>
-                    )}
-                    {c.follow_up_date && (
-                      <p className={isDue ? "font-bold text-amber-600" : "text-muted-foreground"}>
-                        Retorno previsto: {formatDateBR(c.follow_up_date)} {isDue ? "(Hora de retomar!)" : ""}
-                      </p>
-                    )}
-                  </div>
-                )}
+{list.map((c) => { 
+const wa = whatsappLink(c.phone); 
+const isDue = c.status === "adiado" && c.follow_up_date && c.follow_up_date <= todayStr; 
+const propMatches = getMatchingPropertiesForClient(c, sharedProperties);
+retornar ( 
+<div 
+key={c.id} 
+className={ rounded-xl border bg-card p-5 shadow-card ${ isDue ? "border-amber-500 ring-1 ring-amber-500/30" : "" }} 
+> 
 
-                {c.interest && <p className="mt-3 text-sm">{c.interest}</p>}
-                {c.budget != null && (
-                  <p className="mt-1 text-sm font-semibold text-primary">Até {brl(Number(c.budget))}</p>
-                )}
 
-                <div className="mt-4 flex items-center gap-1">
-                  {wa && (
-                    <Button asChild size="icon" variant="ghost">
-                      <a href={wa} target="_blank" rel="noreferrer" aria-label="WhatsApp">
-                        <MessageCircle className="h-4 w-4" />
-                      </a>
-                    </Button>
-                  )}
-                  {c.phone && (
-                    <Button asChild size="icon" variant="ghost">
-                      <a href={`tel:${c.phone}`} aria-label="Ligar">
-                        <Phone className="h-4 w-4" />
-                      </a>
-                    </Button>
-                  )}
-                  <div className="flex-1" />
-                  {c.status === "adiado" && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-8 text-xs mr-1"
-                      onClick={() =>
-                        save.mutate({
-                          id: c.id,
-                          status: "ativo",
-                          deferred_reason: null,
-                          follow_up_date: null,
-                        } as never)
-                      }
-                      title="Mover de volta para Clientes Ativos"
-                    >
-                      <RotateCcw className="mr-1 h-3.5 w-3.5" /> Reativar
-                    </Button>
-                  )}
-                  <Button size="icon" variant="ghost" onClick={() => setEditing(c)} aria-label="Editar">
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => confirm("Excluir cliente?") && remove.mutate(c.id)}
-                    aria-label="Excluir"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+{c.name} 
 
-      <Dialog open={editing !== undefined} onOpenChange={(o) => !o && setEditing(undefined)}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{editing ? "Editar cliente" : "Novo cliente"}</DialogTitle>
-          </DialogHeader>
-          <ClientForm initial={editing} onDone={() => setEditing(undefined)} />
-        </DialogContent>
-      </Dialog>
-    </>
-  );
+{c.type} 
+{c.source ?  · ${c.source}: ""} 
+
+
+{stageLabel(c.stage)}
+{c.status !== "adiado" && propMatches.length > 0 && ( 
+<button 
+type="button" 
+onClick={() => setEditing(c)} 
+className="mt-2.5 inline-flex items-center gap-1.5 rounded-md bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-500/20 transition-colors" 
+> 
+
+{propMatches.length} {propMatches.length === 1 ? "imóvel compatível" : "imóvel compatível"} 
+
+)}
+{c.status === "adiado" && (
+
+{c.deferred_reason && (
+
+Motivo: {c.deferred_reason}
+
+)}
+{c.follow_up_date && (
+<p className={isDue ? "font-bold text-amber-600" : "text-muted-foreground"}>
+Retorno previsto: {formatDateBR(c.follow_up_date)} {isDue ? "(Hora de retomar!)" : ""}
+
+)}
+
+)}
+{c.interest && {c.interest}} 
+{c.budget != null && ( 
+Até {brl(Number(c.budget))} 
+)}
+{wa && ( 
+
+
+
+
+
+)} 
+{c.phone && ( <a href={ } aria-label="Ligar">
+
+ )} {c.status === "adiado" && ( <Button size="sm" variant="outline" className="h-8 text-xs mr-1" onClick={() => save.mutate({ id: c.id, status: "ativo", deferred_reason: null, follow_up_date: null, } as never) } title="Mover de volta para Clientes Ativos" > Reativar )} <Button size="icon" variant="ghost" onClick={() => setEditing(c)} aria-label="Editar"> <Button size="icon" variant="ghost" onClick={() => confirm("Excluir cliente?") && remove.mutate(c.id)} aria-label="Excluir" > ); })} )}tel:${c.phone}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<Dialog open={editing !== undefined} onOpenChange={(o) => !o && setEditing(undefined)}>
+
+
+{editing ? "Editar cliente" : "Novo cliente"}
+
+<ClientForm initial={editing} onDone={() => setEditing(undefined)} />
+
+
+</>
+);
 }
+
