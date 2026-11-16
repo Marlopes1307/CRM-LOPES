@@ -281,6 +281,7 @@ function PropertyForm({ initial, onDone }: { initial: Property | null; onDone: (
         </div>
       </div>
 <Button className="col-span-2 md:col-span-4" disabled={save.isPending || uploading}>
+</form>
 Salvar imóvel
 
 async function generatePropertyPDF(p: Property, photoUrls: Record<string, string> = {}) {
