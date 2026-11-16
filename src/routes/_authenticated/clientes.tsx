@@ -181,7 +181,6 @@ function ClientsPage() {
       );
     });
 
-    // Na aba Compra Adiada, ordena pelos que têm data de retorno mais próxima primeiro
     if (tab === "adiado") {
       return [...filtered].sort((a, b) => {
         if (!a.follow_up_date) return 1;
@@ -207,7 +206,6 @@ function ClientsPage() {
         }
       />
 
-      {/* Abas Ativos vs Compra Adiada */}
       <div className="mb-4 flex gap-2 border-b pb-3">
         <Button
           type="button"
@@ -281,9 +279,10 @@ function ClientsPage() {
                 {c.status === "adiado" && (
                   <div className="mt-3 rounded-lg bg-amber-500/10 border border-amber-500/20 p-2.5 text-xs space-y-1">
                     {c.deferred_reason && (
-Motivo: {c.deferred_reason}
-
-)}
+                      <p className="text-foreground">
+                        <strong>Motivo:</strong> {c.deferred_reason}
+                      </p>
+                    )}
 {c.follow_up_date && (
 <p className={isDue ? "font-bold text-amber-600" : "text-muted-foreground"}>
 Retorno previsto: {formatDateBR(c.follow_up_date)} {isDue ? "(Hora de retomar!)" : ""}
