@@ -482,19 +482,7 @@ function PropertyDetailsDialog({
           <p className="text-xs text-muted-foreground">
             {p.captador_name ? `Captado por: ${p.captador_name}` : ""}
           </p>
-          <Button
-            asChild
-            className="bg-emerald-600 hover:bg-emerald-700 text-white"
-          >
-            <a
-              href={getWhatsAppShareUrl(p)}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Compartilhar no WhatsApp
-            </a>
-          </Button>
-        </div>
+         </div>
       </DialogContent>
     </Dialog>
   );
@@ -583,20 +571,7 @@ function PropertyCard({
           <Button type="button" variant="outline" size="sm" onClick={onView}>
             Ver detalhes
           </Button>
-          <Button
-            asChild
-            size="sm"
-            className="bg-emerald-600 hover:bg-emerald-700 text-white"
-          >
-            <a
-              href={getWhatsAppShareUrl(p)}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              WhatsApp
-            </a>
-          </Button>
-        </div>
+             </div>
 
         {canEdit ? (
           <div className="flex items-center justify-between border-t pt-3">
