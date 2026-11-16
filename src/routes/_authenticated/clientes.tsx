@@ -413,6 +413,7 @@ function ClientsPage() {
           />
         </div>
       </div>
+
       {list.length === 0 ? (
         <Empty>
           {tab === "adiado"
@@ -539,4 +540,3 @@ function ClientsPage() {
   );
 }
 
-      
