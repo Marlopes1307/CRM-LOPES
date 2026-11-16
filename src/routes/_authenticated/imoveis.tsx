@@ -372,7 +372,6 @@ async function generatePropertyPDF(p: Property, photoUrls: Record<string, string
   printWindow.document.close();
 }
 // Mantém compatibilidade caso algum outro botão ainda chame os nomes antigos
-function getWhatsAppShareUrl(p: Property): string { return "#"; }
 function sharePropertyOnWhatsApp(p: Property, urls?: Record<string, string>) {
   generatePropertyPDF(p, urls);
 }
