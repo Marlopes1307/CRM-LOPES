@@ -343,13 +343,15 @@ async function generatePropertyPDF(p: Property, photoUrls: Record<string, string
         </div>
       ` : ""}
 
-      <div class="footer">
+           <div class="footer">
         <div class="broker-info">
-          <div>Atendimento: <strong>${corretorNome}</strong></div>
+          <div>Atendimento: <strong>${corretorNome}</strong> ${corretorCreci ? `(${corretorCreci})` : ""}</div>
           ${corretorTelefone ? `<div class="broker-phone">📱 WhatsApp / Tel: ${corretorTelefone}</div>` : ""}
+          ${corretorEmail ? `<div style="font-size: 12px; color: #475569; margin-top: 2px;">✉️ ${corretorEmail}</div>` : ""}
         </div>
         <div class="doc-date">Ficha gerada em ${new Date().toLocaleDateString("pt-BR")}</div>
       </div>
+
 
       <script>
         window.onload = function() {
