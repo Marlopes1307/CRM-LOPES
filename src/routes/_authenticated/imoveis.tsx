@@ -279,8 +279,8 @@ function PropertyForm({ initial, onDone }: { initial: Property | null; onDone: (
             <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => upload(e.target.files)} />
           </label>
      <Button className="col-span-2 md:col-span-4" disabled={save.isPending || uploading}>
+     </Button>
 Salvar imóvel
-
 async function generatePropertyPDF(p: Property, photoUrls: Record<string, string> = {}) {
 toast.info("Preparando ficha em PDF...");
 let corretorNome = p.captador_name || "Mota Negócios Imobiliários";
