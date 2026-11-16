@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { Building2, CalendarClock, MessageCircle, Pencil, Phone, Plus, RotateCcw, Search, Trash2 } from "lucide-react";
@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Empty, Field, PageHeader, SelectField, opts } from "@/components/crm/ui";
 import { CLIENT_TYPES, SOURCES, STAGES, brl, stageLabel, whatsappLink } from "@/lib/crm";
 import { emptyToNull, useTable, type Row } from "@/lib/use-table";
-import { useEffect, useMemo, useState } from "react";
+
 
 export const Route = createFileRoute("/_authenticated/imoveis")({
   head: () => ({ meta: [{ title: "Imóveis — Corretor CRM" }] }),
