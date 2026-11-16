@@ -143,7 +143,6 @@ export function ClientForm({ initial, onDone }: { initial?: Client | null | unde
     return obj;
   });
 
-
   const { data: sharedProperties = [] } = useQuery({
     queryKey: ["shared_properties"],
     queryFn: async () => {
@@ -157,36 +156,11 @@ export function ClientForm({ initial, onDone }: { initial?: Client | null | unde
   });
 
   const matchingProperties = useMemo(
-            {matchingProperties.map(({ property: p, reasons }) => (
-           <button
-             key={p.id}
-             type="button"
-             onClick={() => {
-               onDone();
-               navigate({ to: "/imoveis", search: { openId: p.id } as never });
-             }}
-             className="w-full text-left flex items-center justify-between gap-2 rounded-lg border bg-card p-2.5 text-xs hover:border-primary hover:bg-primary/5 transition-colors cursor-pointer"
-             title="Clique para abrir a ficha deste imóvel e gerar o PDF"
-           >
-             <div className="min-w-0 flex-1">
-               <p className="font-semibold truncate text-foreground">{p.title}</p>
-               <p className="text-muted-foreground truncate">
-                 {[p.address, p.city].filter(Boolean).join(", ") || "Localização não informada"}
-               </p>
-               {reasons.length > 0 && (
-                 <p className="text-[11px] text-emerald-700 font-medium truncate">
-                   {reasons.join(" · ")}
-                 </p>
-               )}
-             </div>
-             <div className="text-right shrink-0">
-               <p className="font-bold text-primary">
-                 {p.price != null ? brl(Number(p.price)) : "Sob consulta"}
-               </p>
-               <p className="text-[10px] font-medium text-primary underline">Abrir imóvel →</p>
-             </div>
-           </button>
-         ))}
+    () => getMatchingPropertiesForClient(f, sharedProperties),
+    [f, sharedProperties],
+  );
+
+  const set = (k: keyof typeof blank) => (v: string) => setF((p) => ({ ...p, [k]: v }));
 
   return (
     <form
@@ -272,7 +246,7 @@ export function ClientForm({ initial, onDone }: { initial?: Client | null | unde
             <Building2 className="h-4 w-4 text-primary" />
             Imóveis Compatíveis na Carteira ({matchingProperties.length})
           </h4>
-          <span className="text-[11px] text-muted-foreground">Atualiza em tempo real</span>
+          <span className="text-[11px] text-muted-foreground">Clique para abrir</span>
         </div>
 
         {matchingProperties.length === 0 ? (
@@ -282,9 +256,18 @@ export function ClientForm({ initial, onDone }: { initial?: Client | null | unde
         ) : (
           <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
             {matchingProperties.map(({ property: p, reasons }) => (
-              <div key={p.id} className="flex items-center justify-between gap-2 rounded-lg border bg-card p-2.5 text-xs">
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => {
+                  onDone();
+                  navigate({ to: "/imoveis", search: { openId: p.id } as never });
+                }}
+                className="w-full text-left flex items-center justify-between gap-2 rounded-lg border bg-card p-2.5 text-xs hover:border-primary hover:bg-primary/5 transition-colors cursor-pointer"
+                title="Clique para abrir a ficha deste imóvel e gerar o PDF"
+              >
                 <div className="min-w-0 flex-1">
-                  <p className="font-semibold truncate">{p.title}</p>
+                  <p className="font-semibold truncate text-foreground">{p.title}</p>
                   <p className="text-muted-foreground truncate">
                     {[p.address, p.city].filter(Boolean).join(", ") || "Localização não informada"}
                   </p>
@@ -298,9 +281,9 @@ export function ClientForm({ initial, onDone }: { initial?: Client | null | unde
                   <p className="font-bold text-primary">
                     {p.price != null ? brl(Number(p.price)) : "Sob consulta"}
                   </p>
-                  <p className="text-[10px] uppercase text-muted-foreground">{p.kind}</p>
+                  <p className="text-[10px] font-medium text-primary underline">Abrir imóvel →</p>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         )}
@@ -312,6 +295,7 @@ export function ClientForm({ initial, onDone }: { initial?: Client | null | unde
     </form>
   );
 }
+
 
 function formatDateBR(isoDate?: string | null) {
   if (!isoDate) return null;
