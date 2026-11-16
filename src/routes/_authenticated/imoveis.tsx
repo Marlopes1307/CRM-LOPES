@@ -294,6 +294,7 @@ let corretorCreci = "";
 try {
 const { data: { user } } = await supabase.auth.getUser();
 if (user) {
+const coverUrl = p.photos?. ? urls?.[p.photos] : undefined;
 const { data: profile } = await supabase
 .from("profiles")
 .select("*")
@@ -331,7 +332,7 @@ ${p.bathrooms != null ? <span>🚿 ${p.bathrooms} Banheiros</span> : ""}
 ${p.parking != null ? <span>🚗 ${p.parking} Vagas</span> : ""}
 ${p.area != null ? <span>📐 ${p.area} m²</span> : ""}
 
-${photos.length > 0 ? <img src="${photos[0]}" class="main-photo" alt="Foto principal" /> ${photos.length > 1 ?
+${photos.length > 0 ? <img src="${photos}" class="main-photo" alt="Foto principal" />
 
 ${photos.slice(1, 7).map((url) => <img src="${url}" alt="Foto do imóvel" />).join("")}
 
